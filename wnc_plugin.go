@@ -46,7 +46,7 @@ func (s *server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogV
 		MustExist: true,
 		Follow:    true,
 	}
-	tailFile, send := tail.TailFile("test.log", config)
+	tailFile, send := tail.TailFile(logFile.FileLocation, config)
 
 	if send != nil {
 		return send
