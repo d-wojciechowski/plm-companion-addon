@@ -1,4 +1,5 @@
 wnc_plugin.code-workspace
+proto/*.go
 logs
 .idea
 distr
