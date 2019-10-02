@@ -1,18 +1,25 @@
-image: golang:1.13
+image: golang:1.13.1
 
 stages:
   - build
 
 before_script:
   - chmod +x ./make.sh
+  - wget https://github.com/protocolbuffers/protobuf/releases/download/v3.9.2/protoc-3.9.2-linux-x86_64.zip
+  - apt-get update
+  - apt-get install unzip
+  - unzip protoc-3.9.2-linux-x86_64.zip -d protoc
+  - export PATH=$PATH:/`pwd`/protoc/bin
+  - go get -u github.com/golang/protobuf/protoc-gen-go
 
 build:
   stage: build
   script:
+    - protoc --proto_path=proto --proto_path=third_party --go_out=plugins=grpc:proto service.proto
     - ./make.sh
   artifacts:
     paths:
-      - distr
+      - distr/*
 
 after_script:
   - echo "End CI"
