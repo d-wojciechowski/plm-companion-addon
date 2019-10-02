@@ -4,6 +4,7 @@ stages:
   - build
 
 before_script:
+  - git submodule update --init --recursive
   - chmod +x ./make.sh
   - wget https://github.com/protocolbuffers/protobuf/releases/download/v3.9.2/protoc-3.9.2-linux-x86_64.zip
   - apt-get update
