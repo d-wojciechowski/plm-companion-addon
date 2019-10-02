@@ -12,8 +12,7 @@ build:
     - ./make.sh
   artifacts:
     paths:
-      - WncPlugin-linux-x64
-      - WncPlugin-windows-x64.exe
+      - distr
 
 after_script:
   - echo "End CI"

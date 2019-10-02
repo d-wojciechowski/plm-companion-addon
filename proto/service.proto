@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package proto;
+package pl.dwojciechowski.proto;
 
 message Command {
     string command = 1;
@@ -14,4 +14,16 @@ message Response {
 
 service CommandService {
     rpc execute(Command) returns (Response);
+}
+
+message LogLine {
+    string message = 1;
+}
+
+message LogFileLocation{
+    string fileLocation = 1;
+}
+
+service LogViewerService{
+    rpc getLogs(LogFileLocation) returns (stream LogLine);
 }
