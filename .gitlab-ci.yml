@@ -1,0 +1,18 @@
+image: golang:1.13
+
+stages:
+  - build
+
+before_script:
+  - chmod +x ./make.sh
+
+build:
+  stage: build
+  script:
+    - ./make.sh
+  artifacts:
+    paths:
+      - distr
+
+after_script:
+  - echo "End CI"
