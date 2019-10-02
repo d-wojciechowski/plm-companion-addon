@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"time"
 
-	"dominikw.pl/wnc_plugin/proto"
+	proto "dominikw.pl/wnc_plugin/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
