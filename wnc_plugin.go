@@ -30,6 +30,7 @@ func main() {
 	serviceServer := &grpcServer.Server{NoWncMode: *noWncMode}
 	proto.RegisterCommandServiceServer(server, serviceServer)
 	proto.RegisterLogViewerServiceServer(server, serviceServer)
+	proto.RegisterFileServiceServer(server, serviceServer)
 	reflection.Register(server)
 
 	logger.Infof("server starting with parameters: -v: %t, -noWnc: %t", *verbose, *noWncMode)

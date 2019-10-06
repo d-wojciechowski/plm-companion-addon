@@ -8,6 +8,7 @@ import (
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
@@ -90,4 +91,33 @@ func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogV
 	}
 
 	return nil
+}
+
+func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.FileResponse, error) {
+
+	path := protoPath.Name
+	if protoPath.Name == "" {
+		ex, err := os.Executable()
+		if err != nil {
+			panic(err)
+		}
+		path = filepath.Dir(ex)
+	}
+
+	fInfos, err := ioutil.ReadDir(path)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
+	var files []*proto.FileMeta
+	for _, info := range fInfos {
+		files = append(files, &proto.FileMeta{
+			Name:        info.Name(),
+			IsDirectory: info.IsDir(),
+			Path:        path + string(os.PathSeparator) + info.Name(),
+		})
+	}
+
+	return &proto.FileResponse{Metas: files}, err
 }
