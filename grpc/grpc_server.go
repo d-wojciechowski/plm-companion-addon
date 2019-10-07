@@ -4,13 +4,10 @@ import (
 	"context"
 	proto "dominikw.pl/wnc_plugin/proto"
 	"dominikw.pl/wnc_plugin/util"
-	"errors"
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"
-	"io/ioutil"
 	"os/exec"
 	"path/filepath"
-	"sort"
 )
 
 type Server struct {
@@ -40,37 +37,10 @@ func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogV
 		MustExist: true,
 		Follow:    true,
 	}
-
 	logFileDirectory := logFile.FileLocation
-	logger.Infof("LogViewer request received, looking for log files in: %s", logFileDirectory)
-	infos, e := ioutil.ReadDir(logFileDirectory)
-
-	if e != nil {
-		_ = outputStream.Send(&proto.LogLine{Message: "Directory not found!"})
-		return e
-	}
-
-	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].ModTime().After(infos[j].ModTime())
-	})
-
-	logFileName := ""
-	for _, info := range infos {
-		if util.CheckFileName(info.Name()) {
-			logFileName = info.Name()
-			logger.Infof("Log file chosen: %s", logFileName)
-			break
-		}
-		if util.CheckFileNameOmittingDate(info.Name()) {
-			logFileName = info.Name()
-			logger.Infof("Log file chosen: %s", logFileName)
-			break
-		}
-	}
-
-	if logFileName == "" {
-		logger.Error("Log file not found!")
-		return errors.New("log file not found")
+	logFileName, i := util.FindLogFile(logFile, outputStream)
+	if i != nil {
+		return i
 	}
 
 	tailFile, send := tail.TailFile(filepath.Join(logFileDirectory, logFileName), config)

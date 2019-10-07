@@ -1,3 +1,5 @@
+protoc --proto_path=proto --proto_path=third_party --go_out=plugins=grpc:proto service.proto
+
 export GOARCH=amd64
 export GOOS=linux
 go build -o distr/WncPlugin-linux-x64
