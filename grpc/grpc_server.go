@@ -8,6 +8,7 @@ import (
 	"github.com/hpcloud/tail"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 type Server struct {
@@ -36,9 +37,10 @@ func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogV
 		ReOpen:    true,
 		MustExist: true,
 		Follow:    true,
+		Poll:      runtime.GOOS == "windows",
 	}
 	logFileDirectory := logFile.FileLocation
-	logFileName, i := util.FindLogFile(logFile, outputStream)
+	logFileName, i := util.FindLogFile(logFile)
 	if i != nil {
 		return i
 	}

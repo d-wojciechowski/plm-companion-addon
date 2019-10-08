@@ -13,11 +13,10 @@ import (
 	"time"
 )
 
-func FindLogFile(directory *proto.LogFileLocation, outputStream proto.LogViewerService_GetLogsServer) (string, error) {
+func FindLogFile(directory *proto.LogFileLocation) (string, error) {
 	logger.Infof("LogViewer request received, looking for log files in: %s", directory.FileLocation)
 	infos, e := ioutil.ReadDir(directory.FileLocation)
 	if e != nil {
-		_ = outputStream.Send(&proto.LogLine{Message: "Directory not found!"})
 		return "", e
 	}
 	sort.Slice(infos, func(i, j int) bool {
@@ -55,7 +54,7 @@ func checkFileName(fileName string, logTypeEnum proto.LogFileLocation_Source) bo
 	now := time.Now()
 	t := getTypeString(logTypeEnum)
 
-	regexp := fmt.Sprintf(`(?m)%s\d{1,2}-%s%s%s\d{1,99}-\d{1,99}-log4j.log`,
+	regexp := fmt.Sprintf(`(?m)^%s\d{0,2}-%s%s%s\d{1,99}-\d{1,99}-log4j.log`,
 		t,
 		strconv.Itoa(now.Year())[:2],
 		fmt.Sprintf("%02d", now.Month()),
@@ -66,7 +65,7 @@ func checkFileName(fileName string, logTypeEnum proto.LogFileLocation_Source) bo
 
 func checkFileNameOmittingDate(fileName string, logTypeEnum proto.LogFileLocation_Source) bool {
 	t := getTypeString(logTypeEnum)
-	matched, _ := regexp2.MatchString(fmt.Sprintf(`(?m)%s\d{1,2}-\d{1,99}-\d{1,99}-log4j.log`, t), fileName)
+	matched, _ := regexp2.MatchString(fmt.Sprintf(`(?m)^%s\d{0,2}-\d{1,99}-\d{1,99}-log4j.log`, t), fileName)
 	return matched
 }
 
