@@ -2,17 +2,15 @@ image: golang:1.13.1
 
 cache:
   paths:
-    - /apt-cache
-    - /go/src/github.com
-    - /go/src/golang.org
-    - /go/src/google.golang.org
+    - _GO/
 
 stages:
-  - build
   - test
   - metrics
+  - build
 
 before_script:
+  - cp -R _GO $GOPATH
   - git submodule update --init --recursive
   - chmod +x ./make.sh
   - wget https://github.com/protocolbuffers/protobuf/releases/download/v3.9.2/protoc-3.9.2-linux-x86_64.zip
@@ -49,4 +47,5 @@ build:
       - distr/*
 
 after_script:
+  - cp -R $GOPATH ./_GO
   - echo "End CI"
