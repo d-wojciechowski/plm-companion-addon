@@ -21,11 +21,15 @@ before_script:
   - unzip protoc-3.9.2-linux-x86_64.zip -d protoc
   - export PATH=$PATH:/`pwd`/protoc/bin
   - go get -u github.com/golang/protobuf/protoc-gen-go
+  - protoc --proto_path=proto --proto_path=third_party --go_out=plugins=grpc:proto service.proto
 
 unit_tests:
   stage: test
   script:
     - go test -coverprofile coverage.cov ./...
+  artifacts:
+    paths:
+      - coverage.cov
 
 code_coverage:
   stage: metrics
