@@ -26,6 +26,7 @@ unit_tests:
   stage: test
   script:
     - go test -coverprofile coverage.cov ./...
+    - cp -R $GOPATH ./_GO
   artifacts:
     paths:
       - coverage.cov
@@ -48,5 +49,4 @@ build:
       - distr/*
 
 after_script:
-  - cp -R $GOPATH ./_GO
   - echo "End CI"
