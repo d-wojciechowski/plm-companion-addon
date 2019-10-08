@@ -14,12 +14,6 @@ before_script:
   - cp -R _GO $GOPATH
   - git submodule update --init --recursive
   - chmod +x ./make.sh
-  - wget https://github.com/protocolbuffers/protobuf/releases/download/v3.9.2/protoc-3.9.2-linux-x86_64.zip
-  - apt-get update
-  - apt-get install unzip
-  - unzip protoc-3.9.2-linux-x86_64.zip -d protoc
-  - export PATH=$PATH:/`pwd`/protoc/bin
-  - go get -u github.com/golang/protobuf/protoc-gen-go
   - protoc --proto_path=proto --proto_path=third_party --go_out=plugins=grpc:proto service.proto
 
 unit_tests:
