@@ -1,5 +1,12 @@
 image: golang:1.13.1
 
+cache:
+  paths:
+    - /apt-cache
+    - /go/src/github.com
+    - /go/src/golang.org
+    - /go/src/google.golang.org
+
 stages:
   - build
   - test
@@ -14,7 +21,6 @@ before_script:
   - unzip protoc-3.9.2-linux-x86_64.zip -d protoc
   - export PATH=$PATH:/`pwd`/protoc/bin
   - go get -u github.com/golang/protobuf/protoc-gen-go
-  - go get golang.org/x/tools/cmd/cover
 
 unit_tests:
   stage: test
@@ -24,6 +30,7 @@ unit_tests:
 code_coverage:
   stage: metrics
   script:
+    - go get golang.org/x/tools/cmd/cover
     - go tool cover -html=coverage.cov -o coverage.html
   artifacts:
     paths:
