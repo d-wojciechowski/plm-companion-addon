@@ -10,6 +10,7 @@ stages:
   - build
 
 before_script:
+  - mkdir -p _GO
   - cp -R _GO $GOPATH
   - git submodule update --init --recursive
   - chmod +x ./make.sh
