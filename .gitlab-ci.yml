@@ -1,9 +1,9 @@
 image: golang:1.13.1
 
 stages:
+  - build
   - test
   - metrics
-  - build
 
 before_script:
   - git submodule update --init --recursive
