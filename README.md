@@ -1,3 +1,6 @@
+[![pipeline status](https://gitlab.com/wojciechowskid/wncplugin/badges/master/pipeline.svg)](https://gitlab.com/wojciechowskid/wncplugin-serveraddon/pipelines/latest)
+[![report](https://goreportcard.com/badge/gitlab.com/wojciechowskid/wncplugin-serveraddon)](https://goreportcard.com/report/gitlab.com/wojciechowskid/wncplugin-serveraddon)
+
 # Windchill Intellij Plugin
 
 Server side addon for windchill to communicate with Intellij Plugin
