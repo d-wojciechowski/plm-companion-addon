@@ -15,6 +15,7 @@ import (
 
 type IntegrationFileOperationsTests struct {
 	suite.Suite
+	testDirName           string
 	correctFilenameForMS  string
 	correctFilenameForBMS string
 }
@@ -36,7 +37,7 @@ func (s *IntegrationFileOperationsTests) BeforeTest(_, testName string) {
 }
 
 func (s *IntegrationFileOperationsTests) AfterTest(_, b string) {
-	removeFiles()
+	removeFiles(s)
 }
 
 func TestFindLogFile(t *testing.T) {
@@ -44,25 +45,25 @@ func TestFindLogFile(t *testing.T) {
 }
 
 func (suite *IntegrationFileOperationsTests) TestShouldFindBmsStartedToday() {
-	msLocation := proto.LogFileLocation{FileLocation: "test", LogType: proto.LogFileLocation_BACKGROUND_METHOD_SERVER}
+	msLocation := proto.LogFileLocation{FileLocation: suite.testDirName, LogType: proto.LogFileLocation_BACKGROUND_METHOD_SERVER}
 	s, _ := FindLogFile(&msLocation)
 	suite.Equal(suite.correctFilenameForBMS, s, "should be equal")
 }
 
 func (suite *IntegrationFileOperationsTests) TestShouldFindMsStartedToday() {
-	msLocation := proto.LogFileLocation{FileLocation: "test", LogType: proto.LogFileLocation_METHOD_SERVER}
+	msLocation := proto.LogFileLocation{FileLocation: suite.testDirName, LogType: proto.LogFileLocation_METHOD_SERVER}
 	s, _ := FindLogFile(&msLocation)
 	suite.Equal(suite.correctFilenameForMS, s, "should be equal")
 }
 
 func (suite *IntegrationFileOperationsTests) TestShouldFindBmsStartedBefore() {
-	msLocation := proto.LogFileLocation{FileLocation: "test", LogType: proto.LogFileLocation_BACKGROUND_METHOD_SERVER}
+	msLocation := proto.LogFileLocation{FileLocation: suite.testDirName, LogType: proto.LogFileLocation_BACKGROUND_METHOD_SERVER}
 	s, _ := FindLogFile(&msLocation)
 	suite.Equal(suite.correctFilenameForBMS, s, "should be equal")
 }
 
 func (suite *IntegrationFileOperationsTests) TestShouldFindMsStartedBefore() {
-	msLocation := proto.LogFileLocation{FileLocation: "test", LogType: proto.LogFileLocation_METHOD_SERVER}
+	msLocation := proto.LogFileLocation{FileLocation: suite.testDirName, LogType: proto.LogFileLocation_METHOD_SERVER}
 	s, _ := FindLogFile(&msLocation)
 	suite.Equal(suite.correctFilenameForMS, s, "should be equal")
 }
@@ -75,29 +76,29 @@ func (suite *IntegrationFileOperationsTests) TestShouldFailWithIncorrectDirector
 }
 
 func (suite *IntegrationFileOperationsTests) TestShouldFailWithNoFilesFound() {
-	infos, _ := ioutil.ReadDir("test")
+	infos, _ := ioutil.ReadDir(suite.testDirName)
 	for _, info := range infos {
-		_ = os.Remove("test/" + info.Name())
+		_ = os.Remove(suite.testDirName + "/" + info.Name())
 	}
 
-	msLocation := proto.LogFileLocation{FileLocation: "test", LogType: proto.LogFileLocation_METHOD_SERVER}
+	msLocation := proto.LogFileLocation{FileLocation: suite.testDirName, LogType: proto.LogFileLocation_METHOD_SERVER}
 	s, e := FindLogFile(&msLocation)
 	suite.Assertions.EqualError(e, "Log file not found for type: METHOD_SERVER!",
 		`Should not found any files`, msLocation.FileLocation)
 	suite.Assertions.Empty(s, "%s Should be empty", s)
 }
 
-func removeFiles() {
-	e := os.RemoveAll("test")
+func removeFiles(s *IntegrationFileOperationsTests) {
+	e := os.RemoveAll(s.testDirName)
 	if e != nil {
 		logger.Fatal(e)
 	}
 }
 
 func createFiles(s *IntegrationFileOperationsTests) {
-	_ = os.Mkdir("test", 777)
-	createFile("test/" + s.correctFilenameForMS)
-	createFile("test/" + s.correctFilenameForBMS)
+	s.testDirName, _ = ioutil.TempDir("", "temp_")
+	createFile(s.testDirName + "/" + s.correctFilenameForMS)
+	createFile(s.testDirName + "/" + s.correctFilenameForBMS)
 }
 
 func createFile(name string) {
