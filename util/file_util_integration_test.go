@@ -70,8 +70,7 @@ func (suite *IntegrationFileOperationsTests) TestShouldFindMsStartedBefore() {
 func (suite *IntegrationFileOperationsTests) TestShouldFailWithIncorrectDirectory() {
 	msLocation := proto.LogFileLocation{FileLocation: "incorrect", LogType: proto.LogFileLocation_METHOD_SERVER}
 	s, e := FindLogFile(&msLocation)
-	suite.Assertions.EqualError(e, "open incorrect: The system cannot find the file specified.",
-		"%s Should be an incorrect directory name", msLocation.FileLocation)
+	suite.Assertions.Error(e, "%s Should be an incorrect directory name", msLocation.FileLocation)
 	suite.Assertions.Empty(s, "%s Should be empty", s)
 }
 
