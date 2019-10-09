@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/stretchr/testify/suite"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -64,6 +65,27 @@ func (suite *IntegrationFileOperationsTests) TestShouldFindMsStartedBefore() {
 	msLocation := proto.LogFileLocation{FileLocation: "test", LogType: proto.LogFileLocation_METHOD_SERVER}
 	s, _ := FindLogFile(&msLocation)
 	suite.Equal(suite.correctFilenameForMS, s, "should be equal")
+}
+
+func (suite *IntegrationFileOperationsTests) TestShouldFailWithIncorrectDirectory() {
+	msLocation := proto.LogFileLocation{FileLocation: "incorrect", LogType: proto.LogFileLocation_METHOD_SERVER}
+	s, e := FindLogFile(&msLocation)
+	suite.Assertions.EqualError(e, "open incorrect: The system cannot find the file specified.",
+		"%s Should be an incorrect directory name", msLocation.FileLocation)
+	suite.Assertions.Empty(s, "%s Should be empty", s)
+}
+
+func (suite *IntegrationFileOperationsTests) TestShouldFailWithNoFilesFound() {
+	infos, _ := ioutil.ReadDir("test")
+	for _, info := range infos {
+		_ = os.Remove("test/" + info.Name())
+	}
+
+	msLocation := proto.LogFileLocation{FileLocation: "test", LogType: proto.LogFileLocation_METHOD_SERVER}
+	s, e := FindLogFile(&msLocation)
+	suite.Assertions.EqualError(e, "Log file not found for type: METHOD_SERVER!",
+		`Should not found any files`, msLocation.FileLocation)
+	suite.Assertions.Empty(s, "%s Should be empty", s)
 }
 
 func removeFiles() {

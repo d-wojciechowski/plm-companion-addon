@@ -3,6 +3,7 @@ module dominikw.pl/wnc_plugin
 go 1.13
 
 require (
+	bou.ke/monkey v1.0.1
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2
 	github.com/google/logger v1.0.1

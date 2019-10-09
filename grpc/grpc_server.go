@@ -12,7 +12,20 @@ import (
 )
 
 type Server struct {
-	NoWncMode bool
+	NoWncMode  bool
+	tailConfig tail.Config
+}
+
+func NewServer(noWnc bool) *Server {
+	return &Server{
+		NoWncMode: noWnc,
+		tailConfig: tail.Config{
+			ReOpen:    true,
+			MustExist: true,
+			Follow:    true,
+			Poll:      runtime.GOOS == "windows",
+		},
+	}
 }
 
 func (s *Server) Execute(ctx context.Context, command *proto.Command) (*proto.Response, error) {
@@ -33,19 +46,13 @@ func (s *Server) Execute(ctx context.Context, command *proto.Command) (*proto.Re
 
 func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogViewerService_GetLogsServer) error {
 
-	config := tail.Config{
-		ReOpen:    true,
-		MustExist: true,
-		Follow:    true,
-		Poll:      runtime.GOOS == "windows",
-	}
 	logFileDirectory := logFile.FileLocation
 	logFileName, i := util.FindLogFile(logFile)
 	if i != nil {
 		return i
 	}
 
-	tailFile, send := tail.TailFile(filepath.Join(logFileDirectory, logFileName), config)
+	tailFile, send := tail.TailFile(filepath.Join(logFileDirectory, logFileName), s.tailConfig)
 
 	if send != nil {
 		logger.Error(send)

@@ -14,7 +14,9 @@ before_script:
   - cp -R _GO $GOPATH
   - git submodule update --init --recursive
   - chmod +x ./make.sh
+  - go get github.com/golang/mock/mockgen
   - protoc --proto_path=proto --proto_path=third_party --go_out=plugins=grpc:proto service.proto
+  - mockgen --source=proto/service.pb.go > mock/grpc_server_mock.go
 
 unit_tests:
   stage: test
