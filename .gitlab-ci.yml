@@ -1,22 +1,43 @@
-image: golang:1.13.1
+image: unlucky/golang-protoc
+
+cache:
+  paths:
+    - _GO/
 
 stages:
+  - test
+  - metrics
   - build
 
 before_script:
+  - mkdir -p _GO
+  - cp -R _GO $GOPATH
   - git submodule update --init --recursive
   - chmod +x ./make.sh
-  - wget https://github.com/protocolbuffers/protobuf/releases/download/v3.9.2/protoc-3.9.2-linux-x86_64.zip
-  - apt-get update
-  - apt-get install unzip
-  - unzip protoc-3.9.2-linux-x86_64.zip -d protoc
-  - export PATH=$PATH:/`pwd`/protoc/bin
-  - go get -u github.com/golang/protobuf/protoc-gen-go
+  - protoc --proto_path=proto --proto_path=third_party --go_out=plugins=grpc:proto service.proto
+  - mockgen --source=proto/service.pb.go > mock/grpc_server_mock.go
+
+unit_tests:
+  stage: test
+  script:
+    - go test -coverprofile coverage.cov ./...
+    - cp -R $GOPATH ./_GO
+  artifacts:
+    paths:
+      - coverage.cov
+
+code_coverage:
+  stage: metrics
+  script:
+    - go tool cover -html=coverage.cov -o coverage.html
+    - go test $(go list ./... | grep -v /vendor/) -v -coverprofile .testCoverage.txt
+  artifacts:
+    paths:
+      - coverage.html
 
 build:
   stage: build
   script:
-    - protoc --proto_path=proto --proto_path=third_party --go_out=plugins=grpc:proto service.proto
     - ./make.sh
   artifacts:
     paths:

@@ -27,7 +27,7 @@ func main() {
 	}
 
 	server := grpc.NewServer()
-	serviceServer := &grpcServer.Server{NoWncMode: *noWncMode}
+	serviceServer := grpcServer.NewServer(*noWncMode)
 	proto.RegisterCommandServiceServer(server, serviceServer)
 	proto.RegisterLogViewerServiceServer(server, serviceServer)
 	proto.RegisterFileServiceServer(server, serviceServer)

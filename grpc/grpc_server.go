@@ -11,11 +11,24 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
+	"runtime"
 )
 
 type Server struct {
-	NoWncMode bool
+	NoWncMode  bool
+	tailConfig tail.Config
+}
+
+func NewServer(noWnc bool) *Server {
+	return &Server{
+		NoWncMode: noWnc,
+		tailConfig: tail.Config{
+			ReOpen:    true,
+			MustExist: true,
+			Follow:    true,
+			Poll:      runtime.GOOS == "windows",
+		},
+	}
 }
 
 func (s *Server) Execute(ctx context.Context, command *proto.Command) (*proto.Response, error) {
@@ -36,45 +49,13 @@ func (s *Server) Execute(ctx context.Context, command *proto.Command) (*proto.Re
 
 func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogViewerService_GetLogsServer) error {
 
-	config := tail.Config{
-		ReOpen:    true,
-		MustExist: true,
-		Follow:    true,
-	}
-
 	logFileDirectory := logFile.FileLocation
-	logger.Infof("LogViewer request received, looking for log files in: %s", logFileDirectory)
-	infos, e := ioutil.ReadDir(logFileDirectory)
-
-	if e != nil {
-		_ = outputStream.Send(&proto.LogLine{Message: "Directory not found!"})
-		return e
+	logFileName, i := util.FindLogFile(logFile)
+	if i != nil {
+		return i
 	}
 
-	sort.Slice(infos, func(i, j int) bool {
-		return infos[i].ModTime().After(infos[j].ModTime())
-	})
-
-	logFileName := ""
-	for _, info := range infos {
-		if util.CheckFileName(info.Name()) {
-			logFileName = info.Name()
-			logger.Infof("Log file chosen: %s", logFileName)
-			break
-		}
-		if util.CheckFileNameOmittingDate(info.Name()) {
-			logFileName = info.Name()
-			logger.Infof("Log file chosen: %s", logFileName)
-			break
-		}
-	}
-
-	if logFileName == "" {
-		logger.Error("Log file not found!")
-		return errors.New("log file not found")
-	}
-
-	tailFile, send := tail.TailFile(filepath.Join(logFileDirectory, logFileName), config)
+	tailFile, send := tail.TailFile(filepath.Join(logFileDirectory, logFileName), s.tailConfig)
 
 	if send != nil {
 		logger.Error(send)
