@@ -4,7 +4,6 @@ import (
 	"context"
 	proto "dominikw.pl/wnc_plugin/proto"
 	"dominikw.pl/wnc_plugin/util"
-	"errors"
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"
 	"io/ioutil"
@@ -12,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 type Server struct {
@@ -85,20 +85,41 @@ func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.Fi
 		path = filepath.Dir(ex)
 	}
 
-	fInfos, err := ioutil.ReadDir(path)
-	if err != nil {
-		logger.Error(err)
-		return nil, err
+	paths := strings.Split(path, string(os.PathSeparator))
+
+	cuurrentPath := ""
+	var root *proto.FileMeta
+	var ancestor *proto.FileMeta
+
+	for i := 0; i < len(paths); i++ {
+		if root == nil {
+			root = &proto.FileMeta{
+				Name:        paths[i],
+				IsDirectory: true,
+				ChildFiles:  []*proto.FileMeta{},
+			}
+			ancestor = root
+		}
+		if cuurrentPath == "" {
+			cuurrentPath += paths[i] + string(os.PathSeparator)
+		} else {
+			cuurrentPath += string(os.PathSeparator) + paths[i]
+		}
+		var intermediateAncestor *proto.FileMeta
+		fInfos, _ := ioutil.ReadDir(cuurrentPath)
+		for _, info := range fInfos {
+			currentFM := &proto.FileMeta{
+				Name:        info.Name(),
+				IsDirectory: info.IsDir(),
+				ChildFiles:  []*proto.FileMeta{},
+			}
+			ancestor.ChildFiles = append(ancestor.ChildFiles, currentFM)
+			if len(paths) > i+1 && info.Name() == paths[i+1] {
+				intermediateAncestor = currentFM
+			}
+		}
+		ancestor = intermediateAncestor
 	}
 
-	var files []*proto.FileMeta
-	for _, info := range fInfos {
-		files = append(files, &proto.FileMeta{
-			Name:        info.Name(),
-			IsDirectory: info.IsDir(),
-			Path:        path + string(os.PathSeparator) + info.Name(),
-		})
-	}
-
-	return &proto.FileResponse{Metas: files}, err
+	return &proto.FileResponse{FileTree: []*proto.FileMeta{root}}, nil
 }
