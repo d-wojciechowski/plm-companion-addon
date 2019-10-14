@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"io/ioutil"
 	"os"
-	"syscall"
 )
 
 type gRpcLogsTestSuite struct {
@@ -125,7 +124,5 @@ func (s *gRpcLogsTestSuite) testErrorInTail() {
 	})
 
 	e := s.server.GetLogs(location, serviceGetLogsServer)
-	if s.Error(e) {
-		s.Equal(syscall.ERROR_FILE_NOT_FOUND, e)
-	}
+	s.Error(e)
 }
