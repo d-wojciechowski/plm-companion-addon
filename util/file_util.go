@@ -15,6 +15,10 @@ import (
 
 func FindLogFile(directory *proto.LogFileLocation) (string, error) {
 	logger.Infof("LogViewer request received, looking for log files in: %s", directory.FileLocation)
+	if directory.LogType == proto.LogFileLocation_CUSTOM {
+		_, e := ioutil.ReadFile(directory.FileLocation)
+		return directory.FileLocation, e
+	}
 	infos, e := ioutil.ReadDir(directory.FileLocation)
 	if e != nil {
 		return "", e
@@ -76,9 +80,6 @@ func getTypeString(logType proto.LogFileLocation_Source) string {
 		t = "MethodServer"
 	case proto.LogFileLocation_BACKGROUND_METHOD_SERVER:
 		t = "BackgroundMethodServer"
-	case proto.LogFileLocation_CUSTOM:
-		// NOT YET IMPLEMENTED
-		fallthrough
 	default:
 		t = "MethodServer"
 	}
