@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -80,7 +81,7 @@ func (suite *IntegrationFileOperationsTests) TestShouldFindMsStartedBefore() {
 }
 
 func (suite *IntegrationFileOperationsTests) TestShouldFindExistingCustomLog() {
-	testFileFullPath := suite.testDirName + "\\" + suite.correctFileNames[proto.LogFileLocation_CUSTOM]
+	testFileFullPath := filepath.Join(suite.testDirName, suite.correctFileNames[proto.LogFileLocation_CUSTOM])
 	msLocation := proto.LogFileLocation{
 		FileLocation: testFileFullPath,
 		LogType:      proto.LogFileLocation_CUSTOM}
@@ -93,7 +94,7 @@ func (suite *IntegrationFileOperationsTests) TestShouldFindExistingCustomLog() {
 }
 
 func (suite *IntegrationFileOperationsTests) TestShouldNotFindExistingCustomLog() {
-	testFileFullPath := suite.testDirName + "\\someFile.log"
+	testFileFullPath := filepath.Join(suite.testDirName, "someFile.log")
 	msLocation := proto.LogFileLocation{
 		FileLocation: testFileFullPath,
 		LogType:      proto.LogFileLocation_CUSTOM}
@@ -138,9 +139,9 @@ func removeFiles(s *IntegrationFileOperationsTests) {
 
 func createFiles(s *IntegrationFileOperationsTests) {
 	s.testDirName, _ = ioutil.TempDir("", "temp_")
-	createFile(s.testDirName + "/" + s.correctFileNames[proto.LogFileLocation_METHOD_SERVER])
-	createFile(s.testDirName + "/" + s.correctFileNames[proto.LogFileLocation_BACKGROUND_METHOD_SERVER])
-	createFile(s.testDirName + "/" + s.correctFileNames[proto.LogFileLocation_CUSTOM])
+	createFile(filepath.Join(s.testDirName, s.correctFileNames[proto.LogFileLocation_METHOD_SERVER]))
+	createFile(filepath.Join(s.testDirName, s.correctFileNames[proto.LogFileLocation_BACKGROUND_METHOD_SERVER]))
+	createFile(filepath.Join(s.testDirName, s.correctFileNames[proto.LogFileLocation_CUSTOM]))
 }
 
 func createFile(name string) {
