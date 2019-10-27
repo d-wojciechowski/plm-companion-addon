@@ -76,18 +76,9 @@ func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogV
 
 func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.FileResponse, error) {
 
-	path := protoPath.Name
-	if protoPath.Name == "" {
-		ex, err := os.Executable()
-		if err != nil {
-			panic(err)
-		}
-		path = filepath.Dir(ex)
-	}
+	paths := getPathProto(protoPath)
 
-	paths := strings.Split(path, string(os.PathSeparator))
-
-	cuurrentPath := ""
+	currentPath := ""
 	var root *proto.FileMeta
 	var ancestor *proto.FileMeta
 
@@ -100,13 +91,13 @@ func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.Fi
 			}
 			ancestor = root
 		}
-		if cuurrentPath == "" {
-			cuurrentPath += paths[i] + string(os.PathSeparator)
+		if currentPath == "" {
+			currentPath += paths[i] + string(os.PathSeparator)
 		} else {
-			cuurrentPath += string(os.PathSeparator) + paths[i]
+			currentPath += string(os.PathSeparator) + paths[i]
 		}
 		var intermediateAncestor *proto.FileMeta
-		fInfos, _ := ioutil.ReadDir(cuurrentPath)
+		fInfos, _ := ioutil.ReadDir(currentPath)
 		for _, info := range fInfos {
 			currentFM := &proto.FileMeta{
 				Name:        info.Name(),
@@ -121,5 +112,26 @@ func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.Fi
 		ancestor = intermediateAncestor
 	}
 
-	return &proto.FileResponse{FileTree: []*proto.FileMeta{root}}, nil
+	return &proto.FileResponse{
+		FileTree:  []*proto.FileMeta{root},
+		Separator: string(os.PathSeparator),
+	}, nil
+}
+
+func getPathProto(protoPath *proto.Path) []string {
+	path := protoPath.Name
+	if protoPath.Name == "" {
+		ex, err := os.Executable()
+		if err != nil {
+			panic(err)
+		}
+		path = filepath.Dir(ex)
+	}
+	var paths []string
+	if protoPath.FullExpand {
+		paths = strings.Split(path, string(os.PathSeparator))
+	} else {
+		paths = []string{path}
+	}
+	return paths
 }
