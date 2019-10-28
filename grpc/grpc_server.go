@@ -8,6 +8,7 @@ import (
 	"github.com/hpcloud/tail"
 	"io/ioutil"
 	"os"
+	"github.com/thoas/go-funk"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -111,9 +112,12 @@ func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.Fi
 		}
 		ancestor = intermediateAncestor
 	}
-
+	result := []*proto.FileMeta{root}
+	if(protoPath.GetFullExpand()){
+		result = addOtherDrives(result)
+	}
 	return &proto.FileResponse{
-		FileTree:  []*proto.FileMeta{root},
+		FileTree:  result,
 		Separator: string(os.PathSeparator),
 	}, nil
 }
@@ -133,5 +137,33 @@ func getPathProto(protoPath *proto.Path) []string {
 	} else {
 		paths = []string{path}
 	}
-	return paths
+
+	return funk.Filter(paths, func(s string) bool {
+		return s != ""
+	}).([]string)
+}
+
+func addOtherDrives(result []*proto.FileMeta) ([]*proto.FileMeta) {
+	elements := funk.Filter(getdrives(), func(s string) bool {
+		return string(result[0].GetName()[0]) != s
+	})
+	for _, drive := range elements.([]string) {
+		result = append(result, &proto.FileMeta{
+			Name:        drive+":",
+			IsDirectory: true,
+			ChildFiles:  []*proto.FileMeta{},
+		})
+	}
+	return result
+}
+
+func getdrives() (r []string){
+    for _, drive := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ"{
+        f, err := os.Open(string(drive)+":\\")
+        if err == nil {
+			r = append(r, string(drive))
+            f.Close()
+        }
+    }
+	return
 }
