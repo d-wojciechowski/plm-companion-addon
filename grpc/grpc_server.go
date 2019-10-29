@@ -6,13 +6,14 @@ import (
 	"dominikw.pl/wnc_plugin/util"
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"
+	"github.com/thoas/go-funk"
 	"io/ioutil"
 	"os"
-	"github.com/thoas/go-funk"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"errors"
 )
 
 type Server struct {
@@ -75,54 +76,59 @@ func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogV
 	return nil
 }
 
+/*Navigate retuns File structure starting from path, if proto.Path states that path should be fully expanded, it traverse starting from root */
 func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.FileResponse, error) {
-
-	paths := getPathProto(protoPath)
+	paths := getPaths(protoPath)
+	if len(paths) == 0 {
+		return nil, errors.New("No path exception")
+	}
 
 	currentPath := ""
-	var root *proto.FileMeta
-	var ancestor *proto.FileMeta
+	root := buildFileMeta(paths[0], true)
+	ancestor := root
 
-	for i := 0; i < len(paths); i++ {
-		if root == nil {
-			root = &proto.FileMeta{
-				Name:        paths[i],
-				IsDirectory: true,
-				ChildFiles:  []*proto.FileMeta{},
-			}
-			ancestor = root
+	for index, elem := range paths {
+		currentPath = getCurrentPath(currentPath,elem)
+		var nextElement string
+		if len(paths) > index+1 {
+			nextElement = paths[index+1]
 		}
-		if currentPath == "" {
-			currentPath += paths[i] + string(os.PathSeparator)
-		} else {
-			currentPath += string(os.PathSeparator) + paths[i]
-		}
-		var intermediateAncestor *proto.FileMeta
-		fInfos, _ := ioutil.ReadDir(currentPath)
-		for _, info := range fInfos {
-			currentFM := &proto.FileMeta{
-				Name:        info.Name(),
-				IsDirectory: info.IsDir(),
-				ChildFiles:  []*proto.FileMeta{},
-			}
-			ancestor.ChildFiles = append(ancestor.ChildFiles, currentFM)
-			if len(paths) > i+1 && info.Name() == paths[i+1] {
-				intermediateAncestor = currentFM
-			}
-		}
-		ancestor = intermediateAncestor
+		ancestor = fillAncestor(ancestor, currentPath, nextElement)
 	}
+	return getFullResult(root, protoPath.FullExpand), nil
+}
+
+func fillAncestor(ancestor *proto.FileMeta, currentPath string, nextElement string)(intermediateAncestor *proto.FileMeta){
+	fInfos, _ := ioutil.ReadDir(currentPath)
+	for _, info := range fInfos {
+		currentFM := buildFileMeta(info.Name(), info.IsDir())
+		ancestor.ChildFiles = append(ancestor.ChildFiles, currentFM)
+		if nextElement != "" && info.Name() == nextElement {
+			intermediateAncestor = currentFM
+		}
+	}
+	return
+}
+
+func getCurrentPath(currentPath string, elem string) (string) {
+	if currentPath == "" {
+		return elem + string(os.PathSeparator)
+	} 
+	return currentPath + string(os.PathSeparator) + elem
+}
+
+func getFullResult(root *proto.FileMeta, fullExpand bool) *proto.FileResponse {
 	result := []*proto.FileMeta{root}
-	if(protoPath.GetFullExpand()){
+	if fullExpand {
 		result = addOtherDrives(result)
 	}
 	return &proto.FileResponse{
 		FileTree:  result,
 		Separator: string(os.PathSeparator),
-	}, nil
+	}
 }
 
-func getPathProto(protoPath *proto.Path) []string {
+func getPaths(protoPath *proto.Path) []string {
 	path := protoPath.Name
 	if protoPath.Name == "" {
 		ex, err := os.Executable()
@@ -143,27 +149,20 @@ func getPathProto(protoPath *proto.Path) []string {
 	}).([]string)
 }
 
-func addOtherDrives(result []*proto.FileMeta) ([]*proto.FileMeta) {
-	elements := funk.Filter(getdrives(), func(s string) bool {
+func addOtherDrives(result []*proto.FileMeta) []*proto.FileMeta {
+	elements := funk.Filter((util.GetWindowsDrives()), func(s string) bool {
 		return string(result[0].GetName()[0]) != s
 	})
 	for _, drive := range elements.([]string) {
-		result = append(result, &proto.FileMeta{
-			Name:        drive+":",
-			IsDirectory: true,
-			ChildFiles:  []*proto.FileMeta{},
-		})
+		result = append(result, buildFileMeta(drive+":", true))
 	}
 	return result
 }
 
-func getdrives() (r []string){
-    for _, drive := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ"{
-        f, err := os.Open(string(drive)+":\\")
-        if err == nil {
-			r = append(r, string(drive))
-            f.Close()
-        }
-    }
-	return
+func buildFileMeta(name string, IsDir bool) *proto.FileMeta {
+	return &proto.FileMeta{
+		Name:        name,
+		IsDirectory: IsDir,
+		ChildFiles:  []*proto.FileMeta{},
+	}
 }
