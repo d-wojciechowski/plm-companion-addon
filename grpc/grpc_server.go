@@ -4,6 +4,7 @@ import (
 	"context"
 	proto "dominikw.pl/wnc_plugin/proto"
 	"dominikw.pl/wnc_plugin/util"
+	"errors"
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"
 	"github.com/thoas/go-funk"
@@ -13,7 +14,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"errors"
 )
 
 type Server struct {
@@ -86,9 +86,8 @@ func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.Fi
 	currentPath := ""
 	root := buildFileMeta(paths[0], true)
 	ancestor := root
-
 	for index, elem := range paths {
-		currentPath = getCurrentPath(currentPath,elem)
+		currentPath = getCurrentPath(currentPath, elem)
 		var nextElement string
 		if len(paths) > index+1 {
 			nextElement = paths[index+1]
@@ -98,7 +97,7 @@ func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.Fi
 	return getFullResult(root, protoPath.FullExpand), nil
 }
 
-func fillAncestor(ancestor *proto.FileMeta, currentPath string, nextElement string)(intermediateAncestor *proto.FileMeta){
+func fillAncestor(ancestor *proto.FileMeta, currentPath string, nextElement string) (intermediateAncestor *proto.FileMeta) {
 	fInfos, _ := ioutil.ReadDir(currentPath)
 	for _, info := range fInfos {
 		currentFM := buildFileMeta(info.Name(), info.IsDir())
@@ -110,10 +109,10 @@ func fillAncestor(ancestor *proto.FileMeta, currentPath string, nextElement stri
 	return
 }
 
-func getCurrentPath(currentPath string, elem string) (string) {
+func getCurrentPath(currentPath string, elem string) string {
 	if currentPath == "" {
 		return elem + string(os.PathSeparator)
-	} 
+	}
 	return currentPath + string(os.PathSeparator) + elem
 }
 
@@ -136,6 +135,9 @@ func getPaths(protoPath *proto.Path) []string {
 			panic(err)
 		}
 		path = filepath.Dir(ex)
+		if runtime.GOOS == "windows" {
+			path = strings.ToUpper(path[:1]) + path[1:]
+		}
 	}
 	var paths []string
 	if protoPath.FullExpand {
