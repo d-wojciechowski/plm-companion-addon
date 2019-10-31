@@ -1,17 +1,16 @@
 package main
 
 import (
+	grpcServer "dominikw.pl/wnc_plugin/grpc"
+	proto "dominikw.pl/wnc_plugin/proto"
 	"flag"
 	"github.com/google/logger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
 	"os"
 	"time"
-
-	grpcServer "dominikw.pl/wnc_plugin/grpc"
-	proto "dominikw.pl/wnc_plugin/proto"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 var verbose = flag.Bool("v", false, "print info level logs to stdout")
