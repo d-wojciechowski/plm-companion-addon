@@ -7,7 +7,6 @@ import (
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 )
 
@@ -44,29 +43,28 @@ func (s *Server) Execute(ctx context.Context, command *proto.Command) (*proto.Re
 	return &proto.Response{Message: string(out), Status: 200}, err
 }
 
-func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogViewerService_GetLogsServer) error {
+func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogViewerService_GetLogsServer) (e error) {
 
 	logFileDirectory := logFile.FileLocation
-	logFileName, i := util.FindLogFile(logFile)
-	if i != nil {
-		return i
+	logFileName, e := util.FindLogFile(logFile)
+	if e != nil {
+		return
 	}
+	tailFile, e := tail.TailFile(util.GetPath(logFileDirectory, logFileName, logFile), s.tailConfig)
 
-	tailFile, send := tail.TailFile(filepath.Join(logFileDirectory, logFileName), s.tailConfig)
-
-	if send != nil {
-		logger.Error(send)
-		return send
+	if e != nil {
+		logger.Error(e)
+		return
 	}
 
 	lines := tailFile.Lines
 	for line := range lines {
-		send = outputStream.Send(&proto.LogLine{Message: line.Text})
-		if send != nil {
-			logger.Error(send)
-			return send
+		e = outputStream.Send(&proto.LogLine{Message: line.Text})
+		if e != nil {
+			logger.Error(e)
+			return
 		}
 	}
 
-	return nil
+	return
 }

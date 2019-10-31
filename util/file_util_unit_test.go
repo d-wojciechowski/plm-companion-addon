@@ -39,3 +39,13 @@ func (s *UnitFileOperationsTests) TestCheckFileNameShouldFail() {
 	name := "random test string"
 	s.False(checkFileName(name, proto.LogFileLocation_METHOD_SERVER), "%s Should be incorrect!", name)
 }
+
+func (s *UnitFileOperationsTests) TestGetPathCustom() {
+	path := GetPath("someDir", "test.log", &proto.LogFileLocation{LogType: proto.LogFileLocation_CUSTOM})
+	s.Equal("test.log", path)
+}
+
+func (s *UnitFileOperationsTests) TestGetPathPredefined() {
+	path := GetPath("someDir", "test.log", &proto.LogFileLocation{LogType: proto.LogFileLocation_METHOD_SERVER})
+	s.Equal("someDir\\test.log", path)
+}

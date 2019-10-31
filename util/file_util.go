@@ -7,13 +7,14 @@ import (
 	"github.com/google/logger"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	regexp2 "regexp"
 	"sort"
 	"strconv"
 	"time"
 )
 
-func FindLogFile(directory *proto.LogFileLocation) (string, error) {
+func FindLogFile(directory *proto.LogFileLocation) (logFileName string, e error) {
 	logger.Infof("LogViewer request received, looking for log files in: %s", directory.FileLocation)
 	if directory.LogType == proto.LogFileLocation_CUSTOM {
 		_, e := ioutil.ReadFile(directory.FileLocation)
@@ -26,11 +27,11 @@ func FindLogFile(directory *proto.LogFileLocation) (string, error) {
 	sort.Slice(infos, func(i, j int) bool {
 		return infos[i].ModTime().After(infos[j].ModTime())
 	})
-	logFileName, e := findLogFileOfTypeInDir(infos, directory.LogType)
+	logFileName, e = findLogFileOfTypeInDir(infos, directory.LogType)
 	if e != nil {
 		return "", e
 	}
-	return logFileName, nil
+	return
 }
 
 func findLogFileOfTypeInDir(infos []os.FileInfo, logTypeEnum proto.LogFileLocation_Source) (string, error) {
@@ -54,7 +55,7 @@ func findLogFileOfTypeInDir(infos []os.FileInfo, logTypeEnum proto.LogFileLocati
 	return logFileName, nil
 }
 
-func checkFileName(fileName string, logTypeEnum proto.LogFileLocation_Source) bool {
+func checkFileName(fileName string, logTypeEnum proto.LogFileLocation_Source) (matched bool) {
 	now := time.Now()
 	t := getTypeString(logTypeEnum)
 
@@ -63,18 +64,17 @@ func checkFileName(fileName string, logTypeEnum proto.LogFileLocation_Source) bo
 		strconv.Itoa(now.Year())[:2],
 		fmt.Sprintf("%02d", now.Month()),
 		fmt.Sprintf("%02d", now.Day()))
-	matched, _ := regexp2.MatchString(regexp, fileName)
-	return matched
+	matched, _ = regexp2.MatchString(regexp, fileName)
+	return
 }
 
-func checkFileNameOmittingDate(fileName string, logTypeEnum proto.LogFileLocation_Source) bool {
+func checkFileNameOmittingDate(fileName string, logTypeEnum proto.LogFileLocation_Source) (matched bool) {
 	t := getTypeString(logTypeEnum)
-	matched, _ := regexp2.MatchString(fmt.Sprintf(`(?m)^%s\d{0,2}-\d{1,99}-\d{1,99}-log4j.log`, t), fileName)
-	return matched
+	matched, _ = regexp2.MatchString(fmt.Sprintf(`(?m)^%s\d{0,2}-\d{1,99}-\d{1,99}-log4j.log`, t), fileName)
+	return
 }
 
-func getTypeString(logType proto.LogFileLocation_Source) string {
-	var t string
+func getTypeString(logType proto.LogFileLocation_Source) (t string) {
 	switch logType {
 	case proto.LogFileLocation_METHOD_SERVER:
 		t = "MethodServer"
@@ -83,5 +83,13 @@ func getTypeString(logType proto.LogFileLocation_Source) string {
 	default:
 		t = "MethodServer"
 	}
-	return t
+	return
+}
+
+func GetPath(logFileDirectory string, logFileName string, logFile *proto.LogFileLocation) (path string) {
+	path = filepath.Join(logFileDirectory, logFileName)
+	if logFile.LogType == proto.LogFileLocation_CUSTOM {
+		path = logFileName
+	}
+	return
 }
