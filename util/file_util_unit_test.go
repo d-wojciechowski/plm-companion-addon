@@ -4,6 +4,7 @@ import (
 	proto "dominikw.pl/wnc_plugin/proto"
 	"fmt"
 	"github.com/stretchr/testify/suite"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -47,5 +48,5 @@ func (s *UnitFileOperationsTests) TestGetPathCustom() {
 
 func (s *UnitFileOperationsTests) TestGetPathPredefined() {
 	path := GetPath("someDir", "test.log", &proto.LogFileLocation{LogType: proto.LogFileLocation_METHOD_SERVER})
-	s.Equal("someDir\\test.log", path)
+	s.Equal(filepath.Join("someDir", "test.log"), path)
 }
