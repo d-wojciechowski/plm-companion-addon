@@ -9,6 +9,7 @@ require (
 	github.com/google/logger v1.0.1
 	github.com/hpcloud/tail v1.0.0
 	github.com/stretchr/testify v1.4.0
+	github.com/thoas/go-funk v0.4.0
 	golang.org/x/net v0.0.0-20190916140828-c8589233b77d // indirect
 	golang.org/x/sys v0.0.0-20190916202348-b4ddaad3f8a3 // indirect
 	golang.org/x/text v0.3.2 // indirect

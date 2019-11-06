@@ -1,17 +1,19 @@
 package util
 
 import (
-	proto "dominikw.pl/wnc_plugin/proto"
 	"errors"
 	"fmt"
-	"github.com/google/logger"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	regexp2 "regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"time"
+
+	proto "dominikw.pl/wnc_plugin/proto"
+	"github.com/google/logger"
 )
 
 func FindLogFile(directory *proto.LogFileLocation) (logFileName string, e error) {
@@ -30,6 +32,24 @@ func FindLogFile(directory *proto.LogFileLocation) (logFileName string, e error)
 	logFileName, e = findLogFileOfTypeInDir(infos, directory.LogType)
 	if e != nil {
 		return "", e
+	}
+	return
+}
+
+/*
+GetWindowsDrives returns all windows drives mounted in system.
+If running system is not windows, empty array is returned.
+*/
+func GetWindowsDrives() (r []string) {
+	if runtime.GOOS != "windows" {
+		return []string{}
+	}
+	for _, drive := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+		f, err := os.Open(string(drive) + ":\\")
+		if err == nil {
+			r = append(r, string(drive))
+			f.Close()
+		}
 	}
 	return
 }
