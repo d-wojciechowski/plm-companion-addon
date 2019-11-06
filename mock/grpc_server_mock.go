@@ -13,6 +13,87 @@ import (
 	reflect "reflect"
 )
 
+// MockFileServiceClient is a mock of FileServiceClient interface
+type MockFileServiceClient struct {
+	ctrl     *gomock.Controller
+	recorder *MockFileServiceClientMockRecorder
+}
+
+// MockFileServiceClientMockRecorder is the mock recorder for MockFileServiceClient
+type MockFileServiceClientMockRecorder struct {
+	mock *MockFileServiceClient
+}
+
+// NewMockFileServiceClient creates a new mock instance
+func NewMockFileServiceClient(ctrl *gomock.Controller) *MockFileServiceClient {
+	mock := &MockFileServiceClient{ctrl: ctrl}
+	mock.recorder = &MockFileServiceClientMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockFileServiceClient) EXPECT() *MockFileServiceClientMockRecorder {
+	return m.recorder
+}
+
+// Navigate mocks base method
+func (m *MockFileServiceClient) Navigate(ctx context.Context, in *proto.Path, opts ...grpc.CallOption) (*proto.FileResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Navigate", varargs...)
+	ret0, _ := ret[0].(*proto.FileResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Navigate indicates an expected call of Navigate
+func (mr *MockFileServiceClientMockRecorder) Navigate(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Navigate", reflect.TypeOf((*MockFileServiceClient)(nil).Navigate), varargs...)
+}
+
+// MockFileServiceServer is a mock of FileServiceServer interface
+type MockFileServiceServer struct {
+	ctrl     *gomock.Controller
+	recorder *MockFileServiceServerMockRecorder
+}
+
+// MockFileServiceServerMockRecorder is the mock recorder for MockFileServiceServer
+type MockFileServiceServerMockRecorder struct {
+	mock *MockFileServiceServer
+}
+
+// NewMockFileServiceServer creates a new mock instance
+func NewMockFileServiceServer(ctrl *gomock.Controller) *MockFileServiceServer {
+	mock := &MockFileServiceServer{ctrl: ctrl}
+	mock.recorder = &MockFileServiceServerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockFileServiceServer) EXPECT() *MockFileServiceServerMockRecorder {
+	return m.recorder
+}
+
+// Navigate mocks base method
+func (m *MockFileServiceServer) Navigate(arg0 context.Context, arg1 *proto.Path) (*proto.FileResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Navigate", arg0, arg1)
+	ret0, _ := ret[0].(*proto.FileResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Navigate indicates an expected call of Navigate
+func (mr *MockFileServiceServerMockRecorder) Navigate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Navigate", reflect.TypeOf((*MockFileServiceServer)(nil).Navigate), arg0, arg1)
+}
+
 // MockCommandServiceClient is a mock of CommandServiceClient interface
 type MockCommandServiceClient struct {
 	ctrl     *gomock.Controller
