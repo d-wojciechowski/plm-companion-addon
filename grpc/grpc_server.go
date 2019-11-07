@@ -79,9 +79,8 @@ func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogV
 func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.FileResponse, error) {
 	paths := getPaths(protoPath)
 	if len(paths) == 0 {
-		return nil, errors.New("No path exception")
+		return nil, errors.New("no path exception")
 	}
-
 	currentPath := ""
 	root := buildFileMeta(paths[0], true)
 	ancestor := root
@@ -97,7 +96,10 @@ func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.Fi
 }
 
 func fillAncestor(ancestor *proto.FileMeta, currentPath string, nextElement string) (intermediateAncestor *proto.FileMeta) {
-	fInfos, _ := ioutil.ReadDir(currentPath)
+	fInfos, e := ioutil.ReadDir(currentPath)
+	if e != nil {
+		logger.Error(e)
+	}
 	for _, info := range fInfos {
 		currentFM := buildFileMeta(info.Name(), info.IsDir())
 		ancestor.ChildFiles = append(ancestor.ChildFiles, currentFM)
@@ -123,6 +125,7 @@ func getFullResult(root *proto.FileMeta, fullExpand bool) *proto.FileResponse {
 	return &proto.FileResponse{
 		FileTree:  result,
 		Separator: string(os.PathSeparator),
+		Os:        runtime.GOOS,
 	}
 }
 
@@ -141,6 +144,9 @@ func getPaths(protoPath *proto.Path) []string {
 	var paths []string
 	if protoPath.FullExpand {
 		paths = strings.Split(path, string(os.PathSeparator))
+		if runtime.GOOS != "windows" {
+			paths = append([]string{"/"}, paths...)
+		}
 	} else {
 		paths = []string{path}
 	}
@@ -151,7 +157,7 @@ func getPaths(protoPath *proto.Path) []string {
 }
 
 func addOtherDrives(result []*proto.FileMeta) []*proto.FileMeta {
-	elements := funk.Filter((util.GetWindowsDrives()), func(s string) bool {
+	elements := funk.Filter(util.GetWindowsDrives(), func(s string) bool {
 		return string(result[0].GetName()[0]) != s
 	})
 	for _, drive := range elements.([]string) {
