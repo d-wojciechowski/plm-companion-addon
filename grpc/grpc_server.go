@@ -62,17 +62,24 @@ func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogV
 		logger.Error(e)
 		return
 	}
-
 	lines := tailFile.Lines
+	go handleShutdownByClient(outputStream.Context(), tailFile)
 	for line := range lines {
 		e = outputStream.Send(&proto.LogLine{Message: line.Text})
 		if e != nil {
 			logger.Error(e)
-			return
+			break
 		}
 	}
 
 	return
+}
+
+func handleShutdownByClient(ctx context.Context, tailFile *tail.Tail) {
+	<-ctx.Done()
+	_ = tailFile.Stop()
+	tailFile.Cleanup()
+	logger.Warning("Interrupted by client")
 }
 
 /*Navigate retuns File structure starting from path, if proto.Path states that path should be fully expanded, it traverse starting from root */
