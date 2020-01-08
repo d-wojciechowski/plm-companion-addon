@@ -4,6 +4,7 @@ import (
 	proto "dominikw.pl/wnc_plugin/proto"
 	"fmt"
 	"github.com/stretchr/testify/suite"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -38,4 +39,14 @@ func (s *UnitFileOperationsTests) TestCheckFileNameShouldWork() {
 func (s *UnitFileOperationsTests) TestCheckFileNameShouldFail() {
 	name := "random test string"
 	s.False(checkFileName(name, proto.LogFileLocation_METHOD_SERVER), "%s Should be incorrect!", name)
+}
+
+func (s *UnitFileOperationsTests) TestGetPathCustom() {
+	path := GetPath("someDir", "test.log", &proto.LogFileLocation{LogType: proto.LogFileLocation_CUSTOM})
+	s.Equal("test.log", path)
+}
+
+func (s *UnitFileOperationsTests) TestGetPathPredefined() {
+	path := GetPath("someDir", "test.log", &proto.LogFileLocation{LogType: proto.LogFileLocation_METHOD_SERVER})
+	s.Equal(filepath.Join("someDir", "test.log"), path)
 }
