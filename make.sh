@@ -1,7 +1,5 @@
-protoc --proto_path=proto --proto_path=third_party --go_out=plugins=grpc:proto service.proto
-
-export OLDGOOS=$GOOS
-export OLDGOARCH=$GOARCH
+protoc --proto_path=proto --go_out=plugins=grpc:proto commands/commands.proto
+protoc --proto_path=proto --go_out=plugins=grpc:proto files/files.proto
 
 export GOARCH=amd64
 export GOOS=linux
