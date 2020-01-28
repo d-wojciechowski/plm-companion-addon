@@ -1,4 +1,5 @@
-protoc --proto_path=proto --proto_path=third_party --go_out=plugins=grpc:proto service.proto
+protoc --proto_path=proto --go_out=plugins=grpc:proto commands/commands.proto
+protoc --proto_path=proto --go_out=plugins=grpc:proto files/files.proto
 
 set OLDGOOS=%GOOS%
 set OLDGOARCH=%GOARCH%

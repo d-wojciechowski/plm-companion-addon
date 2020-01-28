@@ -1,92 +1,66 @@
-package grpc
+package server
 
 import (
 	"context"
-	proto "dominikw.pl/wnc_plugin/proto"
+	"dominikw.pl/wnc_plugin/proto/files"
 	"dominikw.pl/wnc_plugin/util"
 	"errors"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"
+	"github.com/rsocket/rsocket-go/payload"
+	"github.com/rsocket/rsocket-go/rx"
+	"github.com/rsocket/rsocket-go/rx/flux"
+	"github.com/rsocket/rsocket-go/rx/mono"
 	"github.com/thoas/go-funk"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
 
-type Server struct {
-	NoWncMode  bool
-	tailConfig tail.Config
-}
-
-func NewServer(noWnc bool) *Server {
-	return &Server{
-		NoWncMode: noWnc,
-		tailConfig: tail.Config{
-			ReOpen:    true,
-			MustExist: true,
-			Follow:    true,
-			Poll:      runtime.GOOS == "windows",
-		},
-	}
-}
-
-func (s *Server) Execute(ctx context.Context, command *proto.Command) (*proto.Response, error) {
-	var cmd *exec.Cmd
-
-	if s.NoWncMode {
-		return &proto.Response{Message: "NO WNC MODE", Status: 200}, nil
-	}
-
-	if command.GetArgs() != "" {
-		cmd = exec.Command(command.GetCommand(), command.GetArgs())
-	} else {
-		cmd = exec.Command(command.GetCommand())
-	}
-	out, err := cmd.CombinedOutput()
-	return &proto.Response{Message: string(out), Status: 200}, err
-}
-
-func (s *Server) GetLogs(logFile *proto.LogFileLocation, outputStream proto.LogViewerService_GetLogsServer) (e error) {
+func (s *Server) GetLogs(msg payload.Payload) flux.Flux {
+	logFile := &files.LogFileLocation{}
+	_ = proto.Unmarshal(msg.Data(), logFile)
 
 	logFileDirectory := logFile.FileLocation
 	logFileName, e := util.FindLogFile(logFile)
 	if e != nil {
-		return
+		flux.Error(e)
 	}
 	tailFile, e := tail.TailFile(util.GetPath(logFileDirectory, logFileName, logFile), s.tailConfig)
-
 	if e != nil {
 		logger.Error(e)
-		return
+		flux.Error(e)
 	}
-	lines := tailFile.Lines
-	go handleShutdownByClient(outputStream.Context(), tailFile)
-	for line := range lines {
-		e = outputStream.Send(&proto.LogLine{Message: line.Text})
-		if e != nil {
-			logger.Error(e)
-			break
+
+	fluxResponse := flux.Create(func(ctx context.Context, s flux.Sink) {
+		lines := tailFile.Lines
+		for line := range lines {
+			if e != nil {
+				logger.Error(e)
+				s.Error(e)
+			}
+			marshal, _ := proto.Marshal(&files.LogLine{Message: line.Text})
+			s.Next(payload.New(marshal, nil))
 		}
-	}
+		s.Complete()
+	}).DoFinally(func(s rx.SignalType) {
+		_ = tailFile.Stop()
+		tailFile.Cleanup()
+	})
 
-	return
+	return fluxResponse
 }
 
-func handleShutdownByClient(ctx context.Context, tailFile *tail.Tail) {
-	<-ctx.Done()
-	_ = tailFile.Stop()
-	tailFile.Cleanup()
-	logger.Warning("Interrupted by client")
-}
+func (srv *Server) Navigate(msg payload.Payload) mono.Mono {
+	protoPath := &files.Path{}
+	_ = proto.Unmarshal(msg.Data(), protoPath)
 
-/*Navigate retuns File structure starting from path, if proto.Path states that path should be fully expanded, it traverse starting from root */
-func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.FileResponse, error) {
 	paths := getPaths(protoPath)
 	if len(paths) == 0 {
-		return nil, errors.New("no path exception")
+		mono.Error(errors.New("no path exception"))
 	}
 	currentPath := ""
 	root := buildFileMeta(paths[0], true)
@@ -99,10 +73,10 @@ func (s *Server) Navigate(ctx context.Context, protoPath *proto.Path) (*proto.Fi
 		}
 		ancestor = fillAncestor(ancestor, currentPath, nextElement)
 	}
-	return getFullResult(root, protoPath.FullExpand), nil
+	return mono.Just(toPayload(getFullResult(root, protoPath.FullExpand), make([]byte, 1)))
 }
 
-func fillAncestor(ancestor *proto.FileMeta, currentPath string, nextElement string) (intermediateAncestor *proto.FileMeta) {
+func fillAncestor(ancestor *files.FileMeta, currentPath string, nextElement string) (intermediateAncestor *files.FileMeta) {
 	fInfos, e := ioutil.ReadDir(currentPath)
 	if e != nil {
 		logger.Error(e)
@@ -124,19 +98,19 @@ func getCurrentPath(currentPath string, elem string) string {
 	return currentPath + string(os.PathSeparator) + elem
 }
 
-func getFullResult(root *proto.FileMeta, fullExpand bool) *proto.FileResponse {
-	result := []*proto.FileMeta{root}
+func getFullResult(root *files.FileMeta, fullExpand bool) *files.FileResponse {
+	result := []*files.FileMeta{root}
 	if fullExpand {
 		result = addOtherDrives(result)
 	}
-	return &proto.FileResponse{
+	return &files.FileResponse{
 		FileTree:  result,
 		Separator: string(os.PathSeparator),
 		Os:        runtime.GOOS,
 	}
 }
 
-func getPaths(protoPath *proto.Path) []string {
+func getPaths(protoPath *files.Path) []string {
 	path := protoPath.Name
 	if protoPath.Name == "" {
 		ex, err := os.Executable()
@@ -163,7 +137,7 @@ func getPaths(protoPath *proto.Path) []string {
 	}).([]string)
 }
 
-func addOtherDrives(result []*proto.FileMeta) []*proto.FileMeta {
+func addOtherDrives(result []*files.FileMeta) []*files.FileMeta {
 	elements := funk.Filter(util.GetWindowsDrives(), func(s string) bool {
 		return string(result[0].GetName()[0]) != s
 	})
@@ -173,10 +147,10 @@ func addOtherDrives(result []*proto.FileMeta) []*proto.FileMeta {
 	return result
 }
 
-func buildFileMeta(name string, IsDir bool) *proto.FileMeta {
-	return &proto.FileMeta{
+func buildFileMeta(name string, IsDir bool) *files.FileMeta {
+	return &files.FileMeta{
 		Name:        name,
 		IsDirectory: IsDir,
-		ChildFiles:  []*proto.FileMeta{},
+		ChildFiles:  []*files.FileMeta{},
 	}
 }

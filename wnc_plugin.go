@@ -1,43 +1,29 @@
 package main
 
 import (
-	grpcServer "dominikw.pl/wnc_plugin/grpc"
-	proto "dominikw.pl/wnc_plugin/proto"
+	"dominikw.pl/wnc_plugin/server"
 	"flag"
 	"github.com/google/logger"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"log"
-	"net"
 	"os"
+	"strconv"
 	"time"
 )
 
 var verbose = flag.Bool("v", false, "print info level logs to stdout")
 var noWncMode = flag.Bool("noWnc", false, "turn on no wnc mode")
+var portNumber = flag.Int("port", 4040, "port number on which server will be listening.")
 
 func main() {
 	flag.Parse()
 	defer setUpLogger().Close()
 
-	listener, err := net.Listen("tcp", ":4040")
-	if err != nil {
-		logger.Fatal(err)
-	}
+	logger.Infof("server starting with parameters: -v: %t, -noWnc: %t, -port: %d", *verbose, *noWncMode, *portNumber)
 
-	server := grpc.NewServer()
-	serviceServer := grpcServer.NewServer(*noWncMode)
-	proto.RegisterCommandServiceServer(server, serviceServer)
-	proto.RegisterLogViewerServiceServer(server, serviceServer)
-	proto.RegisterFileServiceServer(server, serviceServer)
-	reflection.Register(server)
+	rsocketServer := server.NewServer(*noWncMode, "tcp://127.0.0.1:"+strconv.Itoa(*portNumber))
+	go func() { rsocketServer.Start() }()
 
-	logger.Infof("server starting with parameters: -v: %t, -noWnc: %t", *verbose, *noWncMode)
-	logger.Infof("server info: %v", listener.Addr())
-
-	if e := server.Serve(listener); e != nil {
-		logger.Fatal(e)
-	}
+	select {}
 }
 
 func setUpLogger() *logger.Logger {

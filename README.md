@@ -1,6 +1,5 @@
 [![pipeline status](https://gitlab.com/wojciechowskid/wncplugin/badges/master/pipeline.svg)](https://gitlab.com/wojciechowskid/wncplugin-serveraddon/pipelines/latest)
 [![report](https://goreportcard.com/badge/gitlab.com/wojciechowskid/wncplugin-serveraddon)](https://goreportcard.com/report/gitlab.com/wojciechowskid/wncplugin-serveraddon)
-[![coverage report](https://gitlab.com/wojciechowskid/wncplugin-serveraddon/badges/codecov-badge/coverage.svg)](https://gitlab.com/wojciechowskid/wncplugin-serveraddon/commits/codecov-badge)
 
 # Windchill Intellij Plugin
 
@@ -22,17 +21,16 @@ to run it
 
 To start you need:
 * GOLang 1.13
-* GRPC configured and installed [how to set up](https://grpc.io/docs/quickstart/go/)
+* Protoc configured and installed [how to set up](https://developers.google.com/protocol-buffers/docs/gotutorial)
 
 ### Distribution
 
-For windows machine there is already script [make.bat](make.bat). Just run it it will output addon for Windows_X64 and Linux_X64
+For windows machine there is already script [make.bat](make.bat), and for linux [make.sh](make.sh). Just run it, it will produce in distr folder executables for most common platforms.
 
 ## Authors
 
 * **Dominik Wojciechowski** - [wojciechowskid](https://gitlab.com/wojciechowskid)
 * **Michał Celniak** - [Michal1993r](https://gitlab.com/Michal1993r)
-* **Mateusz Sliwa** - [mati220i](https://gitlab.com/mati220i)
 
 ## License
 
