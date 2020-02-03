@@ -2,6 +2,8 @@ package server
 
 import (
 	"dominikw.pl/wnc_plugin/proto/commands"
+	constants_messages "dominikw.pl/wnc_plugin/server/constants/messages"
+	"dominikw.pl/wnc_plugin/util"
 	"github.com/golang/protobuf/proto"
 	"github.com/rsocket/rsocket-go/payload"
 	"github.com/rsocket/rsocket-go/rx/mono"
@@ -14,10 +16,10 @@ func (srv *Server) Execute(msg payload.Payload) mono.Mono {
 
 	var cmd *exec.Cmd
 	if srv.NoWncMode {
-		return mono.Just(toPayload(&commands.Response{Message: "NO WNC MODE", Status: 200}, make([]byte, 1)))
+		return mono.Just(toPayload(&commands.Response{Message: constants_messages.NoWncMode, Status: 200}, make([]byte, 1)))
 	}
 
-	if command.GetArgs() != "" {
+	if !util.IsEmpty(command.GetArgs()) {
 		cmd = exec.Command(command.GetCommand(), command.GetArgs())
 	} else {
 		cmd = exec.Command(command.GetCommand())
