@@ -72,8 +72,12 @@ func (srv *Server) requestChannelHandler() rsocket.OptAbstractSocket {
 }
 
 func (srv *Server) requestStreamHandler() rsocket.OptAbstractSocket {
-	return rsocket.RequestStream(func(msgs payload.Payload) flux.Flux {
-		return srv.GetLogs(msgs)
+	return rsocket.RequestStream(func(msg payload.Payload) flux.Flux {
+		metadata, _ := msg.MetadataUTF8()
+		if strings.Contains(metadata, "FileService") {
+			return srv.GetLogs(msg)
+		}
+		return srv.ExecuteStreaming(msg)
 	})
 }
 
