@@ -2,6 +2,9 @@ package server
 
 import (
 	"context"
+	"dominikw.pl/wnc_plugin/server/constants/other"
+	"dominikw.pl/wnc_plugin/server/constants/server"
+	"dominikw.pl/wnc_plugin/util"
 	"github.com/golang/protobuf/proto"
 	"github.com/hpcloud/tail"
 	"github.com/rsocket/rsocket-go"
@@ -27,7 +30,7 @@ func NewServer(noWnc bool, addr string) *Server {
 			ReOpen:    true,
 			MustExist: true,
 			Follow:    true,
-			Poll:      runtime.GOOS == "windows",
+			Poll:      runtime.GOOS == constants_other.WindowsOSName,
 		},
 	}
 }
@@ -48,18 +51,15 @@ func (srv *Server) Start() {
 		}).
 		Transport(srv.addr).
 		Serve(ctx)
-	if err != nil {
-		panic(err)
-	}
+	util.PanicOnError(err)
 }
 
 func (srv *Server) requestResponseHandler() rsocket.OptAbstractSocket {
 	return rsocket.RequestResponse(func(msg payload.Payload) mono.Mono {
 		metadata, _ := msg.MetadataUTF8()
-		if strings.Contains(metadata, "FileService") {
-			if strings.Contains(metadata, "navigate") {
-				return srv.Navigate(msg)
-			}
+		if strings.Contains(metadata, constants_server.FileServiceIdentifier) &&
+			strings.Contains(metadata, constants_server.NavigateIdentifier) {
+			return srv.Navigate(msg)
 		}
 		return srv.Execute(msg)
 	})
