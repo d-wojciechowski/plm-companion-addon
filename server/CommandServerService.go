@@ -5,12 +5,16 @@ import (
 	"context"
 	"dominikw.pl/wnc_plugin/proto/commands"
 	"github.com/golang/protobuf/proto"
+	"github.com/google/logger"
 	"github.com/pkg/errors"
 	"github.com/rsocket/rsocket-go/payload"
+	"github.com/rsocket/rsocket-go/rx"
 	"github.com/rsocket/rsocket-go/rx/flux"
 	"github.com/rsocket/rsocket-go/rx/mono"
+	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -44,11 +48,12 @@ func (srv *Server) ExecuteStreaming(msg payload.Payload) flux.Flux {
 		})
 	}
 
+	var cmd *exec.Cmd
 	return flux.Create(func(ctx context.Context, s flux.Sink) {
 		if command.GetArgs() != "" {
 			command.Args = ""
 		}
-		cmd := execCommand(command)
+		cmd = execCommand(command)
 
 		stdout, err := cmd.StdoutPipe()
 		errorPiper, err := cmd.StderrPipe()
@@ -76,13 +81,39 @@ func (srv *Server) ExecuteStreaming(msg payload.Payload) flux.Flux {
 			s.Error(err)
 		}
 
+	}).DoFinally(func(s rx.SignalType) {
+		kill(cmd)
 	})
+}
+
+func kill(cmd *exec.Cmd) {
+	var err error
+	if runtime.GOOS == "windows" {
+		err = killOnWindows(cmd)
+	} else {
+		err = killOnLinux(cmd)
+	}
+	logger.Error(err)
+}
+
+func killOnLinux(cmd *exec.Cmd) error {
+	kill := exec.Command("pkill", "-P", strconv.Itoa(cmd.Process.Pid))
+	kill.Stderr = os.Stderr
+	kill.Stdout = os.Stdout
+	return kill.Run()
+}
+
+func killOnWindows(cmd *exec.Cmd) error {
+	kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
+	kill.Stderr = os.Stderr
+	kill.Stdout = os.Stdout
+	return kill.Run()
 }
 
 func execCommand(cmd *commands.Command) *exec.Cmd {
 	if runtime.GOOS == "windows" {
-		return exec.Command("cmd", "/U", "/c", cmd.GetCommand(), cmd.GetArgs())
+		return exec.Command("cmd", "/U", "/c", cmd.GetCommand())
 	} else {
-		return exec.Command("sh", "-c", cmd.GetCommand(), cmd.GetArgs())
+		return exec.Command("sh", "-c", cmd.GetCommand())
 	}
 }
