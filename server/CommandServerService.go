@@ -56,12 +56,12 @@ func (srv *Server) ExecuteStreaming(msg payload.Payload) flux.Flux {
 		var wg sync.WaitGroup
 		wg.Add(2)
 		go func() {
-			pipeReader(stdout, s)
+			pipeReader(stdout, s, commands.Status_RUNNING)
 			wg.Done()
 		}()
 
 		go func() {
-			pipeReader(errorPiper, s)
+			pipeReader(errorPiper, s, commands.Status_FAILED)
 			wg.Done()
 		}()
 
@@ -80,12 +80,12 @@ func (srv *Server) ExecuteStreaming(msg payload.Payload) flux.Flux {
 	})
 }
 
-func pipeReader(errorPiper io.ReadCloser, s flux.Sink) {
-	scanner := bufio.NewScanner(errorPiper)
+func pipeReader(pipe io.ReadCloser, s flux.Sink, status commands.Status) {
+	scanner := bufio.NewScanner(pipe)
 	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		m := scanner.Text()
-		s.Next(toPayload(&commands.Response{Message: m, Status: commands.Status_RUNNING}, make([]byte, 1)))
+		s.Next(toPayload(&commands.Response{Message: m, Status: status}, make([]byte, 1)))
 	}
 }
 
