@@ -9,6 +9,7 @@ require (
 	github.com/golang/protobuf v1.3.2
 	github.com/google/logger v1.0.1
 	github.com/hpcloud/tail v1.0.0
+	github.com/pkg/errors v0.8.1
 	github.com/rsocket/rsocket-go v0.5.3
 	github.com/stretchr/testify v1.4.0
 	github.com/thoas/go-funk v0.5.0

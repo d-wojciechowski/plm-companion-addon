@@ -30,6 +30,8 @@ github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpO
 github.com/jjeffcaii/reactor-go v0.0.16/go.mod h1:yxYBt62huNjDF5+tuzzGhjHM/SCcscp6GeYPsNjU7eA=
 github.com/jjeffcaii/reactor-go v0.1.0 h1:1FbIyMe5eOAQDJZ/xsean0brqJFAjGf3zuCt/bV1Cr8=
 github.com/jjeffcaii/reactor-go v0.1.0/go.mod h1:xbLWvbtwnVyPQOIvY8An7/UZpWJTtNyLWURuwErnwro=
+github.com/mitchellh/go-ps v1.0.0 h1:i6ampVEEF4wQFF+bkYfwYgY+F/uYJDktmvLPf7qIgjc=
+github.com/mitchellh/go-ps v1.0.0/go.mod h1:J4lOc8z8yJs6vUwklHw2XEIiT4z4C40KtWVN3nvg8Pg=
 github.com/opentracing/opentracing-go v1.1.0 h1:pWlfV3Bxv7k65HYwkikxat0+s3pV4bsqf19k25Ur8rU=
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/panjf2000/ants v1.0.0/go.mod h1:AaACblRPzq35m1g3enqYcxspbbiOJJYaxU2wMpm1cXY=
@@ -44,6 +46,10 @@ github.com/rsocket/rsocket-go v0.5.3 h1:Vw8VrIK2pRYERynDpGZ1o6M+Fi8tWJpqzYiP04IV
 github.com/rsocket/rsocket-go v0.5.3/go.mod h1:LGmBJSescJqrCmromCGpMxqz8BBrRZzGwg5KkHsdLuw=
 github.com/rsocket/rsocket-rpc-go v0.0.1 h1:7KbdKQn0PwS8f94hJxi/npOYylyU+rKJEgH7ThWO1Kc=
 github.com/rsocket/rsocket-rpc-go v0.0.1/go.mod h1:kYfucVrSW2GPWH/rwxLmf2HNEoQ1s79fHFu7eSDilS8=
+github.com/sbinet/pstree v0.3.0 h1:XZLdGCbAg/wg8TzoW/060WtRoAQdECnsTrn+RYgyJoQ=
+github.com/sbinet/pstree v0.3.0/go.mod h1:G208WfJOi4oxq4++w97Y4AeuydVuoOz7tPKCEm8y1oE=
+github.com/shirou/gopsutil v2.20.1+incompatible h1:oIq9Cq4i84Hk8uQAUOG3eNdI/29hBawGrD5YRl6JRDY=
+github.com/shirou/gopsutil v2.20.1+incompatible/go.mod h1:5b4v6he4MtMOwMlS0TUMTu2PcXUg8+E1lC7eC3UO/RA=
 github.com/stretchr/objx v0.1.0 h1:4G4v2dO3VZwixGIRoQ5Lfboy6nUhCyYzaqnIAPPhYs4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
