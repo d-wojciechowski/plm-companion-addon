@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bufio"
+	"context"
 	"dominikw.pl/wnc_plugin/proto/commands"
 	constants_messages "dominikw.pl/wnc_plugin/server/constants/messages"
-	"dominikw.pl/wnc_plugin/util"
+	constants_other "dominikw.pl/wnc_plugin/server/constants/other"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/logger"
 	"github.com/rsocket/rsocket-go/payload"
@@ -39,7 +41,10 @@ func (srv *Server) ExecuteStreaming(msg payload.Payload) flux.Flux {
 	if srv.NoWncMode {
 		return flux.Create(func(ctx context.Context, s flux.Sink) {
 			for i := 0; i < 4; i++ {
-				s.Next(toPayload(&commands.Response{Message: "NO WNC MODE", Status: commands.Status_FINISHED}, make([]byte, 1)))
+				response := &commands.Response{
+					Message: constants_messages.NoWncMode,
+					Status:  commands.Status_FINISHED}
+				s.Next(toPayload(response, make([]byte, 1)))
 				time.Sleep(2 * time.Second)
 			}
 			s.Complete()
@@ -91,7 +96,7 @@ func pipeReader(pipe io.ReadCloser, s flux.Sink, status commands.Status) {
 
 func kill(cmd *exec.Cmd) {
 	var err error
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == constants_other.WindowsOSName {
 		err = killOnWindows(cmd)
 	} else {
 		err = killOnLinux(cmd)
@@ -114,7 +119,7 @@ func killOnWindows(cmd *exec.Cmd) error {
 }
 
 func execCommand(cmd *commands.Command) *exec.Cmd {
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == constants_other.WindowsOSName {
 		return exec.Command("cmd", "/U", "/c", cmd.GetCommand())
 	} else {
 		return exec.Command("sh", "-c", cmd.GetCommand())
