@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"dominikw.pl/wnc_plugin/proto/files"
+	"dominikw.pl/wnc_plugin/server/constants/other"
 	"dominikw.pl/wnc_plugin/util"
 	"errors"
 	"github.com/golang/protobuf/proto"
@@ -20,28 +21,23 @@ import (
 	"strings"
 )
 
-func (s *Server) GetLogs(msg payload.Payload) flux.Flux {
+func (s *Server) GetLogs(msg payload.Payload) (f flux.Flux) {
+	defer func() {
+		if e := recover(); e != nil {
+			f = flux.Error(e.(error))
+		}
+	}()
+
 	logFile := &files.LogFileLocation{}
 	_ = proto.Unmarshal(msg.Data(), logFile)
 
 	logFileDirectory := logFile.FileLocation
-	logFileName, e := util.FindLogFile(logFile)
-	if e != nil {
-		flux.Error(e)
-	}
-	tailFile, e := tail.TailFile(util.GetPath(logFileDirectory, logFileName, logFile), s.tailConfig)
-	if e != nil {
-		logger.Error(e)
-		flux.Error(e)
-	}
+	logFileName := util.PanicWrapper(util.FindLogFile(logFile)).(string)
+	tailFile := util.PanicWrapper(tail.TailFile(util.GetPath(logFileDirectory, logFileName, logFile), s.tailConfig)).(*tail.Tail)
 
-	fluxResponse := flux.Create(func(ctx context.Context, s flux.Sink) {
+	f = flux.Create(func(ctx context.Context, s flux.Sink) {
 		lines := tailFile.Lines
 		for line := range lines {
-			if e != nil {
-				logger.Error(e)
-				s.Error(e)
-			}
 			marshal, _ := proto.Marshal(&files.LogLine{Message: line.Text})
 			s.Next(payload.New(marshal, nil))
 		}
@@ -51,7 +47,7 @@ func (s *Server) GetLogs(msg payload.Payload) flux.Flux {
 		tailFile.Cleanup()
 	})
 
-	return fluxResponse
+	return
 }
 
 func (srv *Server) Navigate(msg payload.Payload) mono.Mono {
@@ -60,7 +56,7 @@ func (srv *Server) Navigate(msg payload.Payload) mono.Mono {
 
 	paths := getPaths(protoPath)
 	if len(paths) == 0 {
-		mono.Error(errors.New("no path exception"))
+		return mono.Error(errors.New("no path exception"))
 	}
 	currentPath := ""
 	root := buildFileMeta(paths[0], true)
@@ -80,11 +76,12 @@ func fillAncestor(ancestor *files.FileMeta, currentPath string, nextElement stri
 	fInfos, e := ioutil.ReadDir(currentPath)
 	if e != nil {
 		logger.Error(e)
+		return
 	}
 	for _, info := range fInfos {
 		currentFM := buildFileMeta(info.Name(), info.IsDir())
 		ancestor.ChildFiles = append(ancestor.ChildFiles, currentFM)
-		if nextElement != "" && info.Name() == nextElement {
+		if !util.IsEmpty(nextElement) && info.Name() == nextElement {
 			intermediateAncestor = currentFM
 		}
 	}
@@ -92,7 +89,7 @@ func fillAncestor(ancestor *files.FileMeta, currentPath string, nextElement stri
 }
 
 func getCurrentPath(currentPath string, elem string) string {
-	if currentPath == "" {
+	if util.IsEmpty(currentPath) {
 		return elem + string(os.PathSeparator)
 	}
 	return currentPath + string(os.PathSeparator) + elem
@@ -112,20 +109,18 @@ func getFullResult(root *files.FileMeta, fullExpand bool) *files.FileResponse {
 
 func getPaths(protoPath *files.Path) []string {
 	path := protoPath.Name
-	if protoPath.Name == "" {
+	if util.IsEmpty(protoPath.Name) {
 		ex, err := os.Executable()
-		if err != nil {
-			panic(err)
-		}
+		util.PanicOnError(err)
 		path = filepath.Dir(ex)
-		if runtime.GOOS == "windows" {
+		if runtime.GOOS == constants_other.WindowsOSName {
 			path = strings.ToUpper(path[:1]) + path[1:]
 		}
 	}
 	var paths []string
 	if protoPath.FullExpand {
 		paths = strings.Split(path, string(os.PathSeparator))
-		if runtime.GOOS != "windows" {
+		if runtime.GOOS != constants_other.WindowsOSName {
 			paths = append([]string{"/"}, paths...)
 		}
 	} else {
@@ -133,7 +128,7 @@ func getPaths(protoPath *files.Path) []string {
 	}
 
 	return funk.Filter(paths, func(s string) bool {
-		return s != ""
+		return util.IsEmpty(s)
 	}).([]string)
 }
 

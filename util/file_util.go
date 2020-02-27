@@ -2,6 +2,8 @@ package util
 
 import (
 	"dominikw.pl/wnc_plugin/proto/files"
+	"dominikw.pl/wnc_plugin/server/constants/other"
+	"dominikw.pl/wnc_plugin/server/constants/server"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -17,22 +19,24 @@ import (
 )
 
 func FindLogFile(directory *files.LogFileLocation) (logFileName string, e error) {
+	defer func() {
+		if err := recover(); err != nil {
+			logFileName = ""
+			e = err.(error)
+		}
+	}()
+
 	logger.Infof("LogViewer request received, looking for log files in: %s", directory.FileLocation)
 	if directory.LogType == files.LogFileLocation_CUSTOM {
 		_, e := ioutil.ReadFile(directory.FileLocation)
 		return directory.FileLocation, e
 	}
-	infos, e := ioutil.ReadDir(directory.FileLocation)
-	if e != nil {
-		return "", e
-	}
+	infos := PanicWrapper(ioutil.ReadDir(directory.FileLocation)).([]os.FileInfo)
 	sort.Slice(infos, func(i, j int) bool {
 		return infos[i].ModTime().After(infos[j].ModTime())
 	})
-	logFileName, e = findLogFileOfTypeInDir(infos, directory.LogType)
-	if e != nil {
-		return "", e
-	}
+	logFileName = PanicWrapper(findLogFileOfTypeInDir(infos, directory.LogType)).(string)
+
 	return
 }
 
@@ -41,7 +45,7 @@ GetWindowsDrives returns all windows drives mounted in system.
 If running system is not windows, empty array is returned.
 */
 func GetWindowsDrives() (r []string) {
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != constants_other.WindowsOSName {
 		return []string{}
 	}
 	for _, drive := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
@@ -68,7 +72,7 @@ func findLogFileOfTypeInDir(infos []os.FileInfo, logTypeEnum files.LogFileLocati
 			break
 		}
 	}
-	if logFileName == "" {
+	if IsEmpty(logFileName) {
 		logger.Errorf("Log files not found for type: %s!", logTypeEnum.String())
 		return "", errors.New(fmt.Sprintf("Log files not found for type: %s!", logTypeEnum.String()))
 	}
@@ -97,11 +101,11 @@ func checkFileNameOmittingDate(fileName string, logTypeEnum files.LogFileLocatio
 func getTypeString(logType files.LogFileLocation_Source) (t string) {
 	switch logType {
 	case files.LogFileLocation_METHOD_SERVER:
-		t = "MethodServer"
+		t = constants_server.MethodServerIdentifier
 	case files.LogFileLocation_BACKGROUND_METHOD_SERVER:
-		t = "BackgroundMethodServer"
+		t = constants_server.BackgroundMethodServerIdentifier
 	default:
-		t = "MethodServer"
+		t = constants_server.MethodServerIdentifier
 	}
 	return
 }

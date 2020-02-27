@@ -1,9 +1,9 @@
 package server
 
 import (
-	"bufio"
-	"context"
 	"dominikw.pl/wnc_plugin/proto/commands"
+	constants_messages "dominikw.pl/wnc_plugin/server/constants/messages"
+	"dominikw.pl/wnc_plugin/util"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/logger"
 	"github.com/rsocket/rsocket-go/payload"
@@ -24,7 +24,7 @@ func (srv *Server) Execute(msg payload.Payload) mono.Mono {
 	_ = proto.Unmarshal(msg.Data(), command)
 
 	if srv.NoWncMode {
-		return mono.Just(toPayload(&commands.Response{Message: "NO WNC MODE", Status: commands.Status_FINISHED}, make([]byte, 1)))
+		return mono.Just(toPayload(&commands.Response{Message: constants_messages.NoWncMode, Status: commands.Status_FINISHED}, make([]byte, 1)))
 	}
 
 	cmd := execCommand(command)

@@ -1,7 +1,7 @@
 package util
 
 import (
-	proto "dominikw.pl/wnc_plugin/proto"
+	proto "dominikw.pl/wnc_plugin/proto/files"
 	"fmt"
 	"github.com/stretchr/testify/suite"
 	"path/filepath"
