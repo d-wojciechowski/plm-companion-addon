@@ -1,6 +1,9 @@
 package util
 
 import (
+	"dominikw.pl/wnc_plugin/proto/files"
+	"dominikw.pl/wnc_plugin/server/constants/other"
+	"dominikw.pl/wnc_plugin/server/constants/server"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -12,27 +15,28 @@ import (
 	"strconv"
 	"time"
 
-	proto "dominikw.pl/wnc_plugin/proto"
 	"github.com/google/logger"
 )
 
-func FindLogFile(directory *proto.LogFileLocation) (logFileName string, e error) {
+func FindLogFile(directory *files.LogFileLocation) (logFileName string, e error) {
+	defer func() {
+		if err := recover(); err != nil {
+			logFileName = ""
+			e = err.(error)
+		}
+	}()
+
 	logger.Infof("LogViewer request received, looking for log files in: %s", directory.FileLocation)
-	if directory.LogType == proto.LogFileLocation_CUSTOM {
+	if directory.LogType == files.LogFileLocation_CUSTOM {
 		_, e := ioutil.ReadFile(directory.FileLocation)
 		return directory.FileLocation, e
 	}
-	infos, e := ioutil.ReadDir(directory.FileLocation)
-	if e != nil {
-		return "", e
-	}
+	infos := PanicWrapper(ioutil.ReadDir(directory.FileLocation)).([]os.FileInfo)
 	sort.Slice(infos, func(i, j int) bool {
 		return infos[i].ModTime().After(infos[j].ModTime())
 	})
-	logFileName, e = findLogFileOfTypeInDir(infos, directory.LogType)
-	if e != nil {
-		return "", e
-	}
+	logFileName = PanicWrapper(findLogFileOfTypeInDir(infos, directory.LogType)).(string)
+
 	return
 }
 
@@ -41,7 +45,7 @@ GetWindowsDrives returns all windows drives mounted in system.
 If running system is not windows, empty array is returned.
 */
 func GetWindowsDrives() (r []string) {
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != constants_other.WindowsOSName {
 		return []string{}
 	}
 	for _, drive := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
@@ -54,28 +58,28 @@ func GetWindowsDrives() (r []string) {
 	return
 }
 
-func findLogFileOfTypeInDir(infos []os.FileInfo, logTypeEnum proto.LogFileLocation_Source) (string, error) {
+func findLogFileOfTypeInDir(infos []os.FileInfo, logTypeEnum files.LogFileLocation_Source) (string, error) {
 	logFileName := ""
 	for _, info := range infos {
 		if checkFileName(info.Name(), logTypeEnum) {
 			logFileName = info.Name()
-			logger.Infof("Log file chosen: %s", logFileName)
+			logger.Infof("Log files chosen: %s", logFileName)
 			break
 		}
 		if checkFileNameOmittingDate(info.Name(), logTypeEnum) {
 			logFileName = info.Name()
-			logger.Infof("Log file chosen: %s", logFileName)
+			logger.Infof("Log files chosen: %s", logFileName)
 			break
 		}
 	}
-	if logFileName == "" {
-		logger.Errorf("Log file not found for type: %s!", logTypeEnum.String())
-		return "", errors.New(fmt.Sprintf("Log file not found for type: %s!", logTypeEnum.String()))
+	if IsEmpty(logFileName) {
+		logger.Errorf("Log files not found for type: %s!", logTypeEnum.String())
+		return "", errors.New(fmt.Sprintf("Log files not found for type: %s!", logTypeEnum.String()))
 	}
 	return logFileName, nil
 }
 
-func checkFileName(fileName string, logTypeEnum proto.LogFileLocation_Source) (matched bool) {
+func checkFileName(fileName string, logTypeEnum files.LogFileLocation_Source) (matched bool) {
 	now := time.Now()
 	t := getTypeString(logTypeEnum)
 
@@ -88,27 +92,27 @@ func checkFileName(fileName string, logTypeEnum proto.LogFileLocation_Source) (m
 	return
 }
 
-func checkFileNameOmittingDate(fileName string, logTypeEnum proto.LogFileLocation_Source) (matched bool) {
+func checkFileNameOmittingDate(fileName string, logTypeEnum files.LogFileLocation_Source) (matched bool) {
 	t := getTypeString(logTypeEnum)
 	matched, _ = regexp2.MatchString(fmt.Sprintf(`(?m)^%s\d{0,2}-\d{1,99}-\d{1,99}-log4j.log`, t), fileName)
 	return
 }
 
-func getTypeString(logType proto.LogFileLocation_Source) (t string) {
+func getTypeString(logType files.LogFileLocation_Source) (t string) {
 	switch logType {
-	case proto.LogFileLocation_METHOD_SERVER:
-		t = "MethodServer"
-	case proto.LogFileLocation_BACKGROUND_METHOD_SERVER:
-		t = "BackgroundMethodServer"
+	case files.LogFileLocation_METHOD_SERVER:
+		t = constants_server.MethodServerIdentifier
+	case files.LogFileLocation_BACKGROUND_METHOD_SERVER:
+		t = constants_server.BackgroundMethodServerIdentifier
 	default:
-		t = "MethodServer"
+		t = constants_server.MethodServerIdentifier
 	}
 	return
 }
 
-func GetPath(logFileDirectory string, logFileName string, logFile *proto.LogFileLocation) (path string) {
+func GetPath(logFileDirectory string, logFileName string, logFile *files.LogFileLocation) (path string) {
 	path = filepath.Join(logFileDirectory, logFileName)
-	if logFile.LogType == proto.LogFileLocation_CUSTOM {
+	if logFile.LogType == files.LogFileLocation_CUSTOM {
 		path = logFileName
 	}
 	return

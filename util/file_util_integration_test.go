@@ -1,7 +1,7 @@
 package util
 
 import (
-	proto "dominikw.pl/wnc_plugin/proto"
+	proto "dominikw.pl/wnc_plugin/proto/files"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/stretchr/testify/suite"
@@ -125,7 +125,7 @@ func (suite *IntegrationFileOperationsTests) TestShouldFailWithNoFilesFound() {
 
 	msLocation := proto.LogFileLocation{FileLocation: suite.testDirName, LogType: proto.LogFileLocation_METHOD_SERVER}
 	s, e := FindLogFile(&msLocation)
-	suite.Assertions.EqualError(e, "Log file not found for type: METHOD_SERVER!",
+	suite.Assertions.EqualError(e, "Log files not found for type: METHOD_SERVER!",
 		`Should not found any files`, msLocation.FileLocation)
 	suite.Assertions.Empty(s, "%s Should be empty", s)
 }
