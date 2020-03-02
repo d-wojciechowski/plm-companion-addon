@@ -128,7 +128,7 @@ func getPaths(protoPath *files.Path) []string {
 	}
 
 	return funk.Filter(paths, func(s string) bool {
-		return util.IsEmpty(s)
+		return !util.IsEmpty(s)
 	}).([]string)
 }
 
