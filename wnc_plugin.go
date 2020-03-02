@@ -20,7 +20,7 @@ func main() {
 
 	logger.Infof("server starting with parameters: -v: %t, -noWnc: %t, -port: %d", *verbose, *noWncMode, *portNumber)
 
-	rsocketServer := server.NewServer(*noWncMode, "tcp://127.0.0.1:"+strconv.Itoa(*portNumber))
+	rsocketServer := server.NewServer(*noWncMode, "tcp://0.0.0.0:"+strconv.Itoa(*portNumber))
 	go func() { rsocketServer.Start() }()
 
 	select {}

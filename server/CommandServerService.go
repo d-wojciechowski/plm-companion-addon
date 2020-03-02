@@ -95,27 +95,27 @@ func pipeReader(pipe io.ReadCloser, s flux.Sink, status commands.Status) {
 }
 
 func kill(cmd *exec.Cmd) {
-	var err error
+	logger.Info("Attempt to kill")
 	if runtime.GOOS == constants_other.WindowsOSName {
-		err = killOnWindows(cmd)
+		killOnWindows(cmd)
 	} else {
-		err = killOnLinux(cmd)
+		killOnLinux(cmd)
 	}
-	logger.Error(err)
+	logger.Info("Kill success")
 }
 
-func killOnLinux(cmd *exec.Cmd) error {
+func killOnLinux(cmd *exec.Cmd) {
 	kill := exec.Command("pkill", "-P", strconv.Itoa(cmd.Process.Pid))
 	kill.Stderr = os.Stderr
 	kill.Stdout = os.Stdout
-	return kill.Run()
+	_ = kill.Run()
 }
 
-func killOnWindows(cmd *exec.Cmd) error {
+func killOnWindows(cmd *exec.Cmd) {
 	kill := exec.Command("TASKKILL", "/T", "/F", "/PID", strconv.Itoa(cmd.Process.Pid))
 	kill.Stderr = os.Stderr
 	kill.Stdout = os.Stdout
-	return kill.Run()
+	_ = kill.Run()
 }
 
 func execCommand(cmd *commands.Command) *exec.Cmd {

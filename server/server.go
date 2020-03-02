@@ -6,6 +6,7 @@ import (
 	"dominikw.pl/wnc_plugin/server/constants/server"
 	"dominikw.pl/wnc_plugin/util"
 	"github.com/golang/protobuf/proto"
+	"github.com/google/logger"
 	"github.com/hpcloud/tail"
 	"github.com/rsocket/rsocket-go"
 	"github.com/rsocket/rsocket-go/payload"
@@ -23,6 +24,7 @@ type Server struct {
 }
 
 func NewServer(noWnc bool, addr string) *Server {
+	logger.Infof("Attempt to create server on addr %s", addr)
 	return &Server{
 		addr:      addr,
 		NoWncMode: noWnc,
@@ -74,7 +76,7 @@ func (srv *Server) requestChannelHandler() rsocket.OptAbstractSocket {
 func (srv *Server) requestStreamHandler() rsocket.OptAbstractSocket {
 	return rsocket.RequestStream(func(msg payload.Payload) flux.Flux {
 		metadata, _ := msg.MetadataUTF8()
-		if strings.Contains(metadata, "FileService") {
+		if strings.Contains(metadata, "LogViewerService") {
 			return srv.GetLogs(msg)
 		}
 		return srv.ExecuteStreaming(msg)
