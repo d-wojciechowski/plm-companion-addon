@@ -31,6 +31,8 @@ jobs:
         
     - name: Proto compile golang
       uses: kubitre/proto_action@v1.2
+      with:
+        dir_with_proto_name: proto
 
     - name: Build
       run: go build -v .
