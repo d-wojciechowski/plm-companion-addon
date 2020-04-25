@@ -31,9 +31,8 @@ jobs:
     - name: Generate proto files
       run : |
         go get -u github.com/golang/protobuf/protoc-gen-go
-        cat proto/commands/commands.proto
-        protoc --proto_path=proto --go_out=plugins=grpc:proto commands/commands.proto
-        protoc --proto_path=proto --go_out=plugins=grpc:proto files/files.proto
+        protoc --proto_path=proto --go_out=plugins=grpc:proto --go_opt=module=github.com/d-wojciechowski/plm-companion-addon commands/commands.proto
+        protoc --proto_path=proto --go_out=plugins=grpc:proto --go_opt=module=github.com/d-wojciechowski/plm-companion-addon files/files.proto
 
     - name: Build 
       run: go build
