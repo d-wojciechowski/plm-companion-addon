@@ -3,6 +3,7 @@ package main
 import (
 	"dominikw.pl/wnc_plugin/server"
 	"flag"
+	"fmt"
 	"github.com/google/logger"
 	"log"
 	"os"
@@ -10,18 +11,18 @@ import (
 	"time"
 )
 
-var verbose = flag.Bool("v", false, "print info level logs to stdout")
-var noWncMode = flag.Bool("noWnc", false, "turn on no wnc mode")
-var portNumber = flag.Int("port", 4040, "port number on which server will be listening.")
+var verbose = flag.Bool("v", false, "Print info level logs to stdout")
+var portNumber = flag.Int("port", 4040, "Port number on which server will be listening.")
+var devMode = flag.Bool("devMode", false, "Turn on dev mode.")
 
 func main() {
 	flag.Parse()
 	defer setUpLogger().Close()
 
-	logger.Infof("server starting with parameters: -v: %t, -noWnc: %t, -port: %d", *verbose, *noWncMode, *portNumber)
+	fmt.Printf("Server starting with parameters: -v: %t, -noWnc: %t, -port: %d\n", *verbose, *devMode, *portNumber)
+	logger.Infof("Server starting with parameters: -v: %t, -noWnc: %t, -port: %d", *verbose, *devMode, *portNumber)
 
-	rsocketServer := server.NewServer(*noWncMode, "tcp://0.0.0.0:"+strconv.Itoa(*portNumber))
-	go func() { rsocketServer.Start() }()
+	go func() { server.NewServer(*devMode, "tcp://0.0.0.0:"+strconv.Itoa(*portNumber)).Start() }()
 
 	select {}
 }
