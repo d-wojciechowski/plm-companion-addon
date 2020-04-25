@@ -20,14 +20,6 @@ jobs:
     
     - name: submodules-init
       uses: snickerbockers/submodules-init@v4
-
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-        if [ -f Gopkg.toml ]; then
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-            dep ensure
-        fi
         
     - name: Set up protobuf
       run: |
@@ -35,7 +27,17 @@ jobs:
         unzip protoc-3.11.4-linux-x86_64.zip -d $GITHUB_WORKSPACE/protoc
         echo "::add-path::$GITHUB_WORKSPACE/protoc/bin"
         chmod +x $GITHUB_WORKSPACE/protoc/bin/protoc
+      
+    - name: Set up GO
+      run: |
+        go clean --modcache
         go get -u github.com/golang/protobuf/protoc-gen-go
+        go get
+        
+    - name: Generate proto files
+      run : |
+        protoc --proto_path=proto --go_out=plugins=grpc:proto commands/commands.proto
+        protoc --proto_path=proto --go_out=plugins=grpc:proto files/files.proto
 
-    - name: Build
+    - name: Prepare 
       run: ./make.sh
