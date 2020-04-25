@@ -29,10 +29,17 @@ jobs:
             dep ensure
         fi
         
-    - name: Proto compile golang
-      uses: kubitre/proto_action@v1.2
-      with:
-        dir_with_proto_name: proto
+    - name: Get protobuf
+      run: |
+        wget https://github.com/protocolbuffers/protobuf/releases/download/v3.10.1/protoc-3.11.4-linux-x86_64.zip
+        apt update && apt install unzip
+        unzip protoc-3.11.4-linux-x86_64.zip -d protoc
+        PATH=$PATH:$(pwd)/protoc/bin
+        echo $PATH
+    - name: Generate Proto
+      run: |
+        protoc --proto_path=proto --go_out=plugins=grpc:proto commands/commands.proto
+        protoc --proto_path=proto --go_out=plugins=grpc:proto files/files.proto
 
     - name: Build
       run: go build -v .
