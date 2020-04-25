@@ -32,7 +32,7 @@ jobs:
     - name: Get protobuf
       run: |
         wget https://github.com/protocolbuffers/protobuf/releases/download/v3.11.4/protoc-3.11.4-linux-x86_64.zip
-        unzip protoc-3.11.4-linux-x86_64.zip -d $(GITHUB_WORKSPACE)/protoc
+        unzip protoc-3.11.4-linux-x86_64.zip -d $GITHUB_WORKSPACE/protoc
         echo "::add-path::$GITHUB_WORKSPACE/protoc/bin"
         chmod +x $GITHUB_WORKSPACE/protoc/bin/protoc
         go get -u github.com/golang/protobuf/protoc-gen-go
