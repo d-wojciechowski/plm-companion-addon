@@ -1,8 +1,8 @@
 package util
 
 import (
-	proto "dominikw.pl/wnc_plugin/proto/files"
 	"fmt"
+	proto "github.com/d-wojciechowski/plm-companion-addon/proto/files"
 	"github.com/stretchr/testify/suite"
 	"path/filepath"
 	"strconv"

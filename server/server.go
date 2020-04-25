@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
-	"dominikw.pl/wnc_plugin/server/constants/other"
-	"dominikw.pl/wnc_plugin/server/constants/server"
-	"dominikw.pl/wnc_plugin/util"
+	"github.com/d-wojciechowski/plm-companion-addon/server/constants/other"
+	"github.com/d-wojciechowski/plm-companion-addon/server/constants/server"
+	"github.com/d-wojciechowski/plm-companion-addon/util"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"

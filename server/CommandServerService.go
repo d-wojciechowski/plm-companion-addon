@@ -3,9 +3,9 @@ package server
 import (
 	"bufio"
 	"context"
-	"dominikw.pl/wnc_plugin/proto/commands"
-	constants_messages "dominikw.pl/wnc_plugin/server/constants/messages"
-	constants_other "dominikw.pl/wnc_plugin/server/constants/other"
+	"github.com/d-wojciechowski/plm-companion-addon/proto/commands"
+	constants_messages "github.com/d-wojciechowski/plm-companion-addon/server/constants/messages"
+	constants_other "github.com/d-wojciechowski/plm-companion-addon/server/constants/other"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/logger"
 	"github.com/rsocket/rsocket-go/payload"

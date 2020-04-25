@@ -1,4 +1,4 @@
-module dominikw.pl/wnc_plugin
+module github.com/d-wojciechowski/plm-companion-addon
 
 go 1.14
 

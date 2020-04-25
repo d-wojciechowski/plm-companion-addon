@@ -1,9 +1,9 @@
 package main
 
 import (
-	"dominikw.pl/wnc_plugin/server"
 	"flag"
 	"fmt"
+	"github.com/d-wojciechowski/plm-companion-addon/server"
 	"github.com/google/logger"
 	"log"
 	"os"
