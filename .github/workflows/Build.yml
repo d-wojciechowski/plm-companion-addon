@@ -18,8 +18,8 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
     
-    - name: submodules-init
-      uses: snickerbockers/submodules-init@v4
+    - name: Pull all submodules
+      run: git submodule update --init --remote --merge
         
     - name: Set up protobuf
       run: |
