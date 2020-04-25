@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.13
+    - name: Set up Go 1.14
       uses: actions/setup-go@v1
       with:
-        go-version: 1.13
+        go-version: 1.14
       id: go
 
     - name: Check out code into the Go module directory
@@ -34,9 +34,11 @@ jobs:
         wget https://github.com/protocolbuffers/protobuf/releases/download/v3.11.4/protoc-3.11.4-linux-x86_64.zip
         unzip protoc-3.11.4-linux-x86_64.zip -d protoc
         echo "::add-path::$(pwd)/protoc/bin"
+        chmod +x ./protoc/bin/protoc
         go get -u github.com/golang/protobuf/protoc-gen-go
         echo $PATH
-        
+        protoc -v
+      
     - name: Generate Proto
       run: |
         protoc --proto_path=proto --go_out=plugins=grpc:proto commands/commands.proto
