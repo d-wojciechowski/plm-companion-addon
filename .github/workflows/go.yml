@@ -35,11 +35,12 @@ jobs:
         unzip protoc-3.11.4-linux-x86_64.zip -d protoc
         echo "::add-path::$(pwd)/protoc/bin"
         go get -u github.com/golang/protobuf/protoc-gen-go
+        echo $PATH
         
     - name: Generate Proto
       run: |
-        ./protoc/bin/protoc --proto_path=proto --go_out=plugins=grpc:proto commands/commands.proto
-        ./protoc/bin/protoc --proto_path=proto --go_out=plugins=grpc:proto files/files.proto
+        protoc --proto_path=proto --go_out=plugins=grpc:proto commands/commands.proto
+        protoc --proto_path=proto --go_out=plugins=grpc:proto files/files.proto
 
     - name: Build
       run: go build -v .
