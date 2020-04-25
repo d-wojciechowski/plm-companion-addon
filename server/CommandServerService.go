@@ -3,9 +3,9 @@ package server
 import (
 	"bufio"
 	"context"
-	"dominikw.pl/wnc_plugin/proto/commands"
-	constants_messages "dominikw.pl/wnc_plugin/server/constants/messages"
-	constants_other "dominikw.pl/wnc_plugin/server/constants/other"
+	"github.com/d-wojciechowski/plm-companion-addon/proto/commands"
+	constants_messages "github.com/d-wojciechowski/plm-companion-addon/server/constants/messages"
+	constants_other "github.com/d-wojciechowski/plm-companion-addon/server/constants/other"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/logger"
 	"github.com/rsocket/rsocket-go/payload"
@@ -25,7 +25,7 @@ func (srv *Server) Execute(msg payload.Payload) mono.Mono {
 	command := &commands.Command{}
 	_ = proto.Unmarshal(msg.Data(), command)
 
-	if srv.NoWncMode {
+	if srv.devMode {
 		return mono.Just(toPayload(&commands.Response{Message: constants_messages.NoWncMode, Status: commands.Status_FINISHED}, make([]byte, 1)))
 	}
 
@@ -38,7 +38,7 @@ func (srv *Server) ExecuteStreaming(msg payload.Payload) flux.Flux {
 	command := &commands.Command{}
 	_ = proto.Unmarshal(msg.Data(), command)
 
-	if srv.NoWncMode {
+	if srv.devMode {
 		return flux.Create(func(ctx context.Context, s flux.Sink) {
 			for i := 0; i < 4; i++ {
 				response := &commands.Response{

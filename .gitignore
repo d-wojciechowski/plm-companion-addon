@@ -2,3 +2,4 @@ wnc_plugin.code-workspace
 logs
 .idea
 distr
+go.sum

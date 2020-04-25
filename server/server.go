@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
-	"dominikw.pl/wnc_plugin/server/constants/other"
-	"dominikw.pl/wnc_plugin/server/constants/server"
-	"dominikw.pl/wnc_plugin/util"
+	"github.com/d-wojciechowski/plm-companion-addon/server/constants/other"
+	"github.com/d-wojciechowski/plm-companion-addon/server/constants/server"
+	"github.com/d-wojciechowski/plm-companion-addon/util"
 	"github.com/golang/protobuf/proto"
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"
@@ -19,15 +19,16 @@ import (
 
 type Server struct {
 	addr       string
-	NoWncMode  bool
+	devMode    bool
 	tailConfig tail.Config
 }
 
-func NewServer(noWnc bool, addr string) *Server {
+func NewServer(devMode bool, addr string) *Server {
 	logger.Infof("Attempt to create server on addr %s", addr)
+	defer logger.Infof("Server instance started on addr %s", addr)
 	return &Server{
-		addr:      addr,
-		NoWncMode: noWnc,
+		addr:    addr,
+		devMode: devMode,
 		tailConfig: tail.Config{
 			ReOpen:    true,
 			MustExist: true,
