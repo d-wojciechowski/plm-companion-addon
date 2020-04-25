@@ -36,8 +36,11 @@ jobs:
         echo "::add-path::$(pwd)/protoc/bin"
         chmod +x ./protoc/bin/protoc
         go get -u github.com/golang/protobuf/protoc-gen-go
+        
+    - name: Validate protobuf installation
+      run: |
         echo $PATH
-        protoc -v
+        protoc -v      
       
     - name: Generate Proto
       run: |
