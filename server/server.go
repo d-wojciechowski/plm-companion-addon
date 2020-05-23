@@ -46,6 +46,8 @@ func (srv *Server) Start() {
 		Fragment(1024).
 		Resume().
 		Acceptor(func(setup payload.SetupPayload, sendingSocket rsocket.CloseableRSocket) (rsocket.RSocket, error) {
+			logger.Info("Acceptor initialization started")
+			defer logger.Info("Acceptor initialization ended")
 			return rsocket.NewAbstractSocket(
 				srv.requestResponseHandler(),
 				srv.requestChannelHandler(),
@@ -58,10 +60,16 @@ func (srv *Server) Start() {
 }
 
 func (srv *Server) requestResponseHandler() rsocket.OptAbstractSocket {
+	logger.Info("RequestResponse initialization start")
+	defer logger.Info("RequestResponse initialization start")
 	return rsocket.RequestResponse(func(msg payload.Payload) mono.Mono {
 		metadata, _ := msg.MetadataUTF8()
 		if strings.Contains(metadata, constants_server.FileServiceIdentifier) &&
 			strings.Contains(metadata, constants_server.NavigateIdentifier) {
+			logger.Infof("Service %s with method %s execution start", constants_server.FileServiceIdentifier,
+				constants_server.NavigateIdentifier)
+			defer logger.Infof("Service %s with method %s execution ended", constants_server.FileServiceIdentifier,
+				constants_server.NavigateIdentifier)
 			return srv.Navigate(msg)
 		}
 		return srv.Execute(msg)
@@ -69,17 +77,29 @@ func (srv *Server) requestResponseHandler() rsocket.OptAbstractSocket {
 }
 
 func (srv *Server) requestChannelHandler() rsocket.OptAbstractSocket {
+	logger.Infof("RequestChannel initialization start")
+	defer logger.Infof("RequestChannel initialization ended")
 	return rsocket.RequestChannel(func(msgs rx.Publisher) flux.Flux {
 		return nil
 	})
 }
 
 func (srv *Server) requestStreamHandler() rsocket.OptAbstractSocket {
+	logger.Infof("requestStreamHandler initialization start")
+	defer logger.Infof("requestStreamHandler initialization ended")
 	return rsocket.RequestStream(func(msg payload.Payload) flux.Flux {
 		metadata, _ := msg.MetadataUTF8()
-		if strings.Contains(metadata, "LogViewerService") {
+		if strings.Contains(metadata, constants_server.LogServiceIdentifier) {
+			logger.Infof("Service %s with method %s execution start", constants_server.LogServiceIdentifier,
+				"GetLogs")
+			defer logger.Infof("Service %s with method %s execution ended", constants_server.LogServiceIdentifier,
+				"GetLogs")
 			return srv.GetLogs(msg)
 		}
+		logger.Infof("Service %s with method %s execution start", constants_server.LogServiceIdentifier,
+			"ExecuteStreaming")
+		defer logger.Infof("Service %s with method %s execution ended", constants_server.LogServiceIdentifier,
+			"ExecuteStreaming")
 		return srv.ExecuteStreaming(msg)
 	})
 }

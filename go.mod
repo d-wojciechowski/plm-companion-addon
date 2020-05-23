@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hpcloud/tail v1.0.0
 	github.com/panjf2000/ants v1.3.0 // indirect
-	github.com/rsocket/rsocket-go v0.5.7
+	github.com/rsocket/rsocket-go v0.5.9
 	github.com/stretchr/testify v1.4.0
 	github.com/thoas/go-funk v0.6.0
 	go.uber.org/atomic v1.6.0 // indirect
