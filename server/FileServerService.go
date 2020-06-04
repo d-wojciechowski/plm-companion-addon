@@ -30,19 +30,25 @@ func (s *Server) GetLogs(msg payload.Payload) (f flux.Flux) {
 
 	logFile := &files.LogFileLocation{}
 	_ = proto.Unmarshal(msg.Data(), logFile)
+	logger.Infof("Started log listen in folder %s, of log type", logFile.FileLocation, logFile.LogType)
 
 	logFileDirectory := logFile.FileLocation
 	logFileName := util.PanicWrapper(util.FindLogFile(logFile)).(string)
+	logger.Infof("Latest log file is %s", logFileName)
 	tailFile := util.PanicWrapper(tail.TailFile(util.GetPath(logFileDirectory, logFileName, logFile), s.tailConfig)).(*tail.Tail)
+	logger.Infof("Tailing file %s", logFileName)
 
 	f = flux.Create(func(ctx context.Context, s flux.Sink) {
+		logger.Infof("Streaming lines started for file %s", logFileName)
 		lines := tailFile.Lines
 		for line := range lines {
 			marshal, _ := proto.Marshal(&files.LogLine{Message: line.Text})
 			s.Next(payload.New(marshal, nil))
 		}
+		logger.Infof("Streaming lines finished for file %s", logFileName)
 		s.Complete()
 	}).DoFinally(func(s rx.SignalType) {
+		logger.Infof("Cleaning up tail data : %s", logFileName)
 		_ = tailFile.Stop()
 		tailFile.Cleanup()
 	})
@@ -53,15 +59,19 @@ func (s *Server) GetLogs(msg payload.Payload) (f flux.Flux) {
 func (srv *Server) Navigate(msg payload.Payload) mono.Mono {
 	protoPath := &files.Path{}
 	_ = proto.Unmarshal(msg.Data(), protoPath)
-
+	logger.Infof("Navigation to %s", protoPath.Name)
 	paths := getPaths(protoPath)
+	logger.Infof("Path is %s", strings.Join(paths, ", "))
 	if len(paths) == 0 {
+		logger.Errorf("Path is empty for input data %s", protoPath.Name)
 		return mono.Error(errors.New("no path exception"))
 	}
 	currentPath := ""
+	logger.Infof("Starting build of response data")
 	root := buildFileMeta(paths[0], true)
 	ancestor := root
 	for index, elem := range paths {
+		logger.Infof("Build %s path element", elem)
 		currentPath = getCurrentPath(currentPath, elem)
 		var nextElement string
 		if len(paths) > index+1 {
@@ -69,6 +79,7 @@ func (srv *Server) Navigate(msg payload.Payload) mono.Mono {
 		}
 		ancestor = fillAncestor(ancestor, currentPath, nextElement)
 	}
+	logger.Infof("Full response build finished.")
 	return mono.Just(toPayload(getFullResult(root, protoPath.FullExpand), make([]byte, 1)))
 }
 

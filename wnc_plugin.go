@@ -22,7 +22,7 @@ func main() {
 	fmt.Printf("Server starting with parameters: -v: %t, -noWnc: %t, -port: %d\n", *verbose, *devMode, *portNumber)
 	logger.Infof("Server starting with parameters: -v: %t, -noWnc: %t, -port: %d", *verbose, *devMode, *portNumber)
 
-	go func() { server.NewServer(*devMode, "tcp://0.0.0.0:"+strconv.Itoa(*portNumber)).Start() }()
+	go func() { server.NewServer(*devMode, "0.0.0.0:"+strconv.Itoa(*portNumber)).Start() }()
 
 	select {}
 }
