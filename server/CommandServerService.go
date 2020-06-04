@@ -37,16 +37,20 @@ func (srv *Server) Execute(msg payload.Payload) mono.Mono {
 func (srv *Server) ExecuteStreaming(msg payload.Payload) flux.Flux {
 	command := &commands.Command{}
 	_ = proto.Unmarshal(msg.Data(), command)
+	logger.Infof("Execution of command %s started", command.Command)
 
 	if srv.devMode {
+		logger.Infof("Dummy dev mode execution of command %s", command.Command)
 		return flux.Create(func(ctx context.Context, s flux.Sink) {
 			for i := 0; i < 4; i++ {
 				response := &commands.Response{
 					Message: constants_messages.NoWncMode,
 					Status:  commands.Status_FINISHED}
+				logger.Infof("Dummy message: %s with status %s", constants_messages.NoWncMode, commands.Status_FINISHED)
 				s.Next(toPayload(response, make([]byte, 1)))
 				time.Sleep(2 * time.Second)
 			}
+			logger.Infof("Execution of command %s ended", command.Command)
 			s.Complete()
 		})
 	}
@@ -61,22 +65,30 @@ func (srv *Server) ExecuteStreaming(msg payload.Payload) flux.Flux {
 		var wg sync.WaitGroup
 		wg.Add(2)
 		go func() {
+			logger.Infof("Command %s standard out opened", command.Command)
 			pipeReader(stdout, s, commands.Status_RUNNING)
 			wg.Done()
+			logger.Infof("Command %s standard out closed", command.Command)
 		}()
 
 		go func() {
+			logger.Infof("Command %s error out opened", command.Command)
 			pipeReader(errorPiper, s, commands.Status_FAILED)
 			wg.Done()
+			logger.Infof("Command %s error out closed", command.Command)
 		}()
 
 		go func() {
+			logger.Infof("Command %s will run until both outs will finish", command.Command)
 			wg.Wait()
+			logger.Infof("Command %s stdout and err out closed", command.Command)
 			s.Complete()
+			logger.Infof("Command %s completed", command.Command)
 		}()
 
 		_ = cmd.Start()
 		if err != nil {
+			logger.Errorf("Command %s finished with error %s", command.Command, err.Error())
 			s.Error(err)
 		}
 
