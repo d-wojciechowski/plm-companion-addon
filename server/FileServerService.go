@@ -6,14 +6,13 @@ import (
 	"github.com/d-wojciechowski/plm-companion-addon/proto/files"
 	"github.com/d-wojciechowski/plm-companion-addon/server/constants/other"
 	"github.com/d-wojciechowski/plm-companion-addon/util"
-	"github.com/golang/protobuf/proto"
 	"github.com/google/logger"
 	"github.com/hpcloud/tail"
 	"github.com/rsocket/rsocket-go/payload"
 	"github.com/rsocket/rsocket-go/rx"
 	"github.com/rsocket/rsocket-go/rx/flux"
 	"github.com/rsocket/rsocket-go/rx/mono"
-	"github.com/thoas/go-funk"
+	"google.golang.org/protobuf/proto"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -21,7 +20,7 @@ import (
 	"strings"
 )
 
-func (s *Server) GetLogs(msg payload.Payload) (f flux.Flux) {
+func (srv *Server) GetLogs(msg payload.Payload) (f flux.Flux) {
 	defer func() {
 		if e := recover(); e != nil {
 			f = flux.Error(e.(error))
@@ -35,7 +34,7 @@ func (s *Server) GetLogs(msg payload.Payload) (f flux.Flux) {
 	logFileDirectory := logFile.FileLocation
 	logFileName := util.PanicWrapper(util.FindLogFile(logFile)).(string)
 	logger.Infof("Latest log file is %s", logFileName)
-	tailFile := util.PanicWrapper(tail.TailFile(util.GetPath(logFileDirectory, logFileName, logFile), s.tailConfig)).(*tail.Tail)
+	tailFile := util.PanicWrapper(tail.TailFile(util.GetPath(logFileDirectory, logFileName, logFile), srv.tailConfig)).(*tail.Tail)
 	logger.Infof("Tailing file %s", logFileName)
 
 	f = flux.Create(func(ctx context.Context, s flux.Sink) {
@@ -138,16 +137,16 @@ func getPaths(protoPath *files.Path) []string {
 		paths = []string{path}
 	}
 
-	return funk.Filter(paths, func(s string) bool {
+	return util.Filter(paths, func(s string) bool {
 		return !util.IsEmpty(s)
-	}).([]string)
+	})
 }
 
 func addOtherDrives(result []*files.FileMeta) []*files.FileMeta {
-	elements := funk.Filter(util.GetWindowsDrives(), func(s string) bool {
+	elements := util.Filter(util.GetWindowsDrives(), func(s string) bool {
 		return string(result[0].GetName()[0]) != s
 	})
-	for _, drive := range elements.([]string) {
+	for _, drive := range elements {
 		result = append(result, buildFileMeta(drive+":", true))
 	}
 	return result

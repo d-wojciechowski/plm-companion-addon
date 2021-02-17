@@ -1,6 +1,8 @@
 protoc --proto_path=proto --go_out=plugins=grpc:proto commands/commands.proto
 protoc --proto_path=proto --go_out=plugins=grpc:proto files/files.proto
 
+protoc --proto_path=proto --go_out=build/gen --go_opt=paths=source_relative src/foo.proto src/bar/baz.proto
+
 $env:PRODUCT_NAME="PLMCompanionAddon"
 Write-Output("Building $env:PRODUCT_NAME`n")
 
