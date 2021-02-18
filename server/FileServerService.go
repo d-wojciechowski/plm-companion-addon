@@ -55,6 +55,41 @@ func (srv *Server) GetLogs(msg payload.Payload) (f flux.Flux) {
 	return
 }
 
+func (srv *Server) Send(msg payload.Payload) (f flux.Flux) {
+	defer func() {
+		if e := recover(); e != nil {
+			f = flux.Error(e.(error))
+		}
+	}()
+
+	logFile := &files.LogFileLocation{}
+	_ = proto.Unmarshal(msg.Data(), logFile)
+	logger.Infof("Started log listen in folder %s, of log type", logFile.FileLocation, logFile.LogType)
+
+	logFileDirectory := logFile.FileLocation
+	logFileName := util.PanicWrapper(util.FindLogFile(logFile)).(string)
+	logger.Infof("Latest log file is %s", logFileName)
+	tailFile := util.PanicWrapper(tail.TailFile(util.GetPath(logFileDirectory, logFileName, logFile), srv.tailConfig)).(*tail.Tail)
+	logger.Infof("Tailing file %s", logFileName)
+
+	f = flux.Create(func(ctx context.Context, s flux.Sink) {
+		logger.Infof("Streaming lines started for file %s", logFileName)
+		lines := tailFile.Lines
+		for line := range lines {
+			marshal, _ := proto.Marshal(&files.LogLine{Message: line.Text})
+			s.Next(payload.New(marshal, nil))
+		}
+		logger.Infof("Streaming lines finished for file %s", logFileName)
+		s.Complete()
+	}).DoFinally(func(s rx.SignalType) {
+		logger.Infof("Cleaning up tail data : %s", logFileName)
+		_ = tailFile.Stop()
+		tailFile.Cleanup()
+	})
+
+	return
+}
+
 func (srv *Server) Navigate(msg payload.Payload) mono.Mono {
 	protoPath := &files.Path{}
 	_ = proto.Unmarshal(msg.Data(), protoPath)

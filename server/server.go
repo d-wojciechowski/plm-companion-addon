@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/d-wojciechowski/plm-companion-addon/proto/files"
 	"github.com/d-wojciechowski/plm-companion-addon/server/constants/other"
 	"github.com/d-wojciechowski/plm-companion-addon/server/constants/server"
 	"github.com/d-wojciechowski/plm-companion-addon/util"
@@ -9,9 +10,12 @@ import (
 	"github.com/hpcloud/tail"
 	"github.com/rsocket/rsocket-go"
 	"github.com/rsocket/rsocket-go/payload"
+	"github.com/rsocket/rsocket-go/rx"
 	"github.com/rsocket/rsocket-go/rx/flux"
 	"github.com/rsocket/rsocket-go/rx/mono"
 	"google.golang.org/protobuf/proto"
+	"log"
+	"os"
 	"runtime"
 	"strings"
 )
@@ -65,6 +69,8 @@ func (srv *Server) requestResponseHandler() rsocket.OptAbstractSocket {
 	defer logger.Info("RequestResponse initialization start")
 	return rsocket.RequestResponse(func(msg payload.Payload) mono.Mono {
 		metadata, _ := msg.MetadataUTF8()
+		println(metadata)
+
 		if strings.Contains(metadata, constants_server.FileServiceIdentifier) &&
 			strings.Contains(metadata, constants_server.NavigateIdentifier) {
 			logger.Infof("Service %s with method %s execution start", constants_server.FileServiceIdentifier,
@@ -81,8 +87,36 @@ func (srv *Server) requestChannelHandler() rsocket.OptAbstractSocket {
 	logger.Infof("RequestChannel initialization start")
 	defer logger.Infof("RequestChannel initialization ended")
 	return rsocket.RequestChannel(func(requests flux.Flux) (responses flux.Flux) {
-		return nil
+		outChan := make(chan []byte, 0)
+
+		f, err := os.OpenFile("D:\\LICENSE",
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Println(err)
+		}
+
+		requests.DoOnNext(func(msg payload.Payload) error {
+			println("OK")
+			logFile := &files.Chunk{}
+			_ = proto.Unmarshal(msg.Data(), logFile)
+			f.Write(logFile.Content)
+			return nil
+		}).DoOnComplete(func() {
+			resp, _ := proto.Marshal(&files.UploadStatus{
+				Message: "OK",
+				Code:    files.UploadStatusCode_Ok,
+			})
+			outChan <- resp
+		}).DoFinally(func(s rx.SignalType) {
+			_ = f.Close()
+		}).Subscribe(context.Background())
+
+		return flux.Create(func(ctx context.Context, s flux.Sink) {
+			s.Next(payload.New(<-outChan, make([]byte, 1)))
+			s.Complete()
+		})
 	})
+
 }
 
 func (srv *Server) requestStreamHandler() rsocket.OptAbstractSocket {
@@ -90,18 +124,29 @@ func (srv *Server) requestStreamHandler() rsocket.OptAbstractSocket {
 	defer logger.Infof("requestStreamHandler initialization ended")
 	return rsocket.RequestStream(func(msg payload.Payload) flux.Flux {
 		metadata, _ := msg.MetadataUTF8()
+		println(metadata)
 		if strings.Contains(metadata, constants_server.LogServiceIdentifier) {
-			logger.Infof("Service %s with method %s execution start", constants_server.LogServiceIdentifier,
-				"GetLogs")
-			defer logger.Infof("Service %s with method %s execution ended", constants_server.LogServiceIdentifier,
-				"GetLogs")
-			return srv.GetLogs(msg)
+			if strings.HasSuffix(metadata, constants_server.GetLogsIdentifier) {
+				logger.Infof("Service %s with method %s execution start", constants_server.LogServiceIdentifier,
+					constants_server.GetLogsIdentifier)
+				defer logger.Infof("Service %s with method %s execution ended", constants_server.LogServiceIdentifier,
+					constants_server.GetLogsIdentifier)
+				return srv.GetLogs(msg)
+			}
+		} else if strings.Contains(metadata, constants_server.CommandServiceIdentifier) {
+			logger.Infof("Service %s with method %s execution start", constants_server.CommandServiceIdentifier,
+				"ExecuteStreaming")
+			defer logger.Infof("Service %s with method %s execution ended", constants_server.CommandServiceIdentifier,
+				"ExecuteStreaming")
+			return srv.ExecuteStreaming(msg)
+		} else if strings.Contains(metadata, constants_server.FileServiceIdentifier) {
+			logger.Infof("Service %s with method %s execution start", constants_server.FileServiceIdentifier,
+				constants_server.SendIdentifier)
+			defer logger.Infof("Service %s with method %s execution ended", constants_server.FileServiceIdentifier,
+				constants_server.SendIdentifier)
+			return srv.Send(msg)
 		}
-		logger.Infof("Service %s with method %s execution start", constants_server.LogServiceIdentifier,
-			"ExecuteStreaming")
-		defer logger.Infof("Service %s with method %s execution ended", constants_server.LogServiceIdentifier,
-			"ExecuteStreaming")
-		return srv.ExecuteStreaming(msg)
+		return nil
 	})
 }
 

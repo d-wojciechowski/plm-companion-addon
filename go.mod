@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/golang/protobuf v1.4.2
 	github.com/google/logger v1.1.0
 	github.com/hpcloud/tail v1.0.0
 	github.com/rsocket/rsocket-go v0.8.0
