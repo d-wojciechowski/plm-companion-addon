@@ -14,7 +14,6 @@ import (
 	"github.com/rsocket/rsocket-go/rx/flux"
 	"github.com/rsocket/rsocket-go/rx/mono"
 	"google.golang.org/protobuf/proto"
-	"log"
 	"os"
 	"runtime"
 	"strings"
@@ -89,16 +88,14 @@ func (srv *Server) requestChannelHandler() rsocket.OptAbstractSocket {
 	return rsocket.RequestChannel(func(requests flux.Flux) (responses flux.Flux) {
 		outChan := make(chan []byte, 0)
 
-		f, err := os.OpenFile("D:\\LICENSE",
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Println(err)
-		}
+		var f *os.File
 
 		requests.DoOnNext(func(msg payload.Payload) error {
-			println("OK")
 			logFile := &files.Chunk{}
 			_ = proto.Unmarshal(msg.Data(), logFile)
+			if f == nil {
+				f, _ = os.OpenFile(logFile.FilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			}
 			f.Write(logFile.Content)
 			return nil
 		}).DoOnComplete(func() {
