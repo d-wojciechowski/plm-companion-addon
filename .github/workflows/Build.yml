@@ -35,4 +35,6 @@ jobs:
         protoc --proto_path=proto --go_out=plugins=grpc:proto files/files.proto
 
     - name: Build
-      run: go build
+      run: |
+        go mod download
+        go build
