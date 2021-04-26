@@ -10,7 +10,6 @@ import (
 	"github.com/hpcloud/tail"
 	"github.com/rsocket/rsocket-go"
 	"github.com/rsocket/rsocket-go/payload"
-	"github.com/rsocket/rsocket-go/rx"
 	"github.com/rsocket/rsocket-go/rx/flux"
 	"github.com/rsocket/rsocket-go/rx/mono"
 	"runtime"
@@ -42,10 +41,11 @@ func (srv *Server) Start() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	tp := rsocket.TCPServer().SetAddr(srv.addr).Build()
+
 	err := rsocket.Receive().
-		Fragment(1024).
 		Resume().
-		Acceptor(func(setup payload.SetupPayload, sendingSocket rsocket.CloseableRSocket) (rsocket.RSocket, error) {
+		Acceptor(func(ctx context.Context, setup payload.SetupPayload, socket rsocket.CloseableRSocket) (rsocket.RSocket, error) {
 			logger.Info("Acceptor initialization started")
 			defer logger.Info("Acceptor initialization ended")
 			return rsocket.NewAbstractSocket(
@@ -54,7 +54,7 @@ func (srv *Server) Start() {
 				srv.requestStreamHandler(),
 			), nil
 		}).
-		Transport(srv.addr).
+		Transport(tp).
 		Serve(ctx)
 	util.PanicOnError(err)
 }
@@ -79,7 +79,7 @@ func (srv *Server) requestResponseHandler() rsocket.OptAbstractSocket {
 func (srv *Server) requestChannelHandler() rsocket.OptAbstractSocket {
 	logger.Infof("RequestChannel initialization start")
 	defer logger.Infof("RequestChannel initialization ended")
-	return rsocket.RequestChannel(func(msgs rx.Publisher) flux.Flux {
+	return rsocket.RequestChannel(func(requests flux.Flux) (responses flux.Flux) {
 		return nil
 	})
 }
