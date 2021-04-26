@@ -44,7 +44,6 @@ func (srv *Server) Start() {
 	tp := rsocket.TCPServer().SetAddr(srv.addr).Build()
 
 	err := rsocket.Receive().
-		Fragment(1024).
 		Resume().
 		Acceptor(func(ctx context.Context, setup payload.SetupPayload, socket rsocket.CloseableRSocket) (rsocket.RSocket, error) {
 			logger.Info("Acceptor initialization started")
