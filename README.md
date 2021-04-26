@@ -10,7 +10,7 @@ This program is designed to be a tunnel, and enable actions such as: disc discov
 ### Prerequisites
 
 To start you need:
-* GOLang 1.14
+* GOLang 1.16
 * Protoc configured and installed [how to set up](https://developers.google.com/protocol-buffers/docs/gotutorial)
 
 ### Getting started
@@ -30,7 +30,7 @@ make.ps1
 ````
 ### Distribution
 
-For windows machine there is already script [make.bat](make.ps1), and for linux [make.sh](make.sh). Just run it, it will produce in distr folder executables for most common platforms.
+For windows machine there is already script [make.ps1](make.ps1), and for linux [make.sh](make.sh). Just run it, it will produce in distr folder executables for most common platforms.
 
 ## Authors
 
